@@ -99,9 +99,9 @@ const attendance = {
 
 // TODO(API 연동): POST /api/auth/login 으로 교체
 const users = [
-  { id: 1, username: "guildmaster", password: "1234", nickname: "초코라떼", avatar: "https://i.pravatar.cc/300?img=1", role: "마스터" },
-  { id: 2, username: "vice", password: "1234", nickname: "자몽쿠키", avatar: "https://i.pravatar.cc/300?img=2", role: "부마스터" },
-  { id: 3, username: "member1", password: "1234", nickname: "딸기치즈타", avatar: "https://i.pravatar.cc/300?img=4", role: "길드원" },
+  { id: 1, username: "admin", password: "1234", nickname: "자몽톡톡", avatar: "https://i.pravatar.cc/300?img=1", role: "마스터" },
+  { id: 2, username: "admin1", password: "1234", nickname: "망고빙수", avatar: "https://i.pravatar.cc/300?img=2", role: "부마스터" },
+  { id: 3, username: "admin2", password: "1234", nickname: "오뜨야", avatar: "https://i.pravatar.cc/300?img=4", role: "부마스터" },
 ];
 
 module.exports = { guildIntro, members, notices, tips, photos, polls, attendance, users };
