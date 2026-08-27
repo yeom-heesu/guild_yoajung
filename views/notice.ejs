@@ -1,0 +1,26 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <h2 class="page-title">📢 공지사항</h2>
+
+    <section class="panel">
+      <ul class="board-list">
+        <!-- TODO(API 연동): GET /api/notices 결과로 교체 -->
+        <% notices.forEach(n => { %>
+          <li class="board-item">
+            <a href="/notice/<%= n.id %>">
+              <% if (n.pinned) { %><span class="badge-pin">고정</span><% } %>
+              <span class="board-item-title"><%= n.title %></span>
+              <span class="board-item-meta"><%= n.author %> · <%= n.date %></span>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

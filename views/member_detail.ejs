@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/members" class="back-link">← 목록으로</a>
+
+    <section class="panel detail-panel">
+      <div class="member-detail-avatar" style="background-image:url('<%= member.avatar %>')"></div>
+
+      <div class="detail-head">
+        <h2 class="detail-title"><%= member.nickname %></h2>
+        <span class="detail-meta"><%= member.job %> · Lv.<%= member.level %> · <%= member.role %></span>
+      </div>
+
+      <p class="detail-body"><%= member.intro %></p>
+
+      <% if (currentUser) { %>
+        <div class="detail-actions">
+          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('member-edit-form')">수정</button>
+        </div>
+
+        <!-- TODO(API 연동): PATCH /api/members/:id 로 교체 -->
+        <form action="/members/<%= member.id %>/edit" method="POST" id="member-edit-form" class="write-form hidden">
+          <input type="text" name="nickname" value="<%= member.nickname %>" required />
+          <input type="text" name="avatar" value="<%= member.avatar %>" />
+          <input type="text" name="intro" value="<%= member.intro %>" required />
+          <button type="submit" class="btn-primary btn-sm">저장하기</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

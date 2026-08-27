@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/photos" class="back-link">← 목록으로</a>
+
+    <section class="panel detail-panel">
+      <div class="detail-photo-full" style="background-image:url('<%= photo.imageUrl %>')"></div>
+
+      <div class="detail-head">
+        <h2 class="detail-title"><%= photo.title %></h2>
+        <span class="detail-meta"><%= photo.author %> · <%= photo.date %></span>
+      </div>
+
+      <% if (currentUser) { %>
+        <div class="detail-actions">
+          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('photo-edit-form')">수정</button>
+          <form method="POST" action="/photos/<%= photo.id %>/delete">
+            <button type="submit" class="btn-danger btn-sm">삭제하기</button>
+          </form>
+        </div>
+
+        <!-- TODO(API 연동): PATCH /api/photos/:id 로 교체 -->
+        <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form" class="write-form hidden">
+          <input type="text" name="title" value="<%= photo.title %>" required />
+          <input type="text" name="imageUrl" value="<%= photo.imageUrl %>" required />
+          <button type="submit" class="btn-primary btn-sm">저장하기</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

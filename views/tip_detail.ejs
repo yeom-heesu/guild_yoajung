@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/tips" class="back-link">← 목록으로</a>
+
+    <section class="panel detail-panel">
+      <div class="detail-head">
+        <span class="badge-cat"><%= tip.category %></span>
+        <h2 class="detail-title"><%= tip.title %></h2>
+        <span class="detail-meta"><%= tip.author %> · <%= tip.date %></span>
+      </div>
+
+      <div class="detail-body"><%= tip.content %></div>
+
+      <% if (currentUser) { %>
+        <div class="detail-actions">
+          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('tip-edit-form')">수정</button>
+          <form method="POST" action="/tips/<%= tip.id %>/delete">
+            <button type="submit" class="btn-danger btn-sm">삭제하기</button>
+          </form>
+        </div>
+
+        <!-- TODO(API 연동): PATCH /api/tips/:id 로 교체 -->
+        <form action="/tips/<%= tip.id %>/edit" method="POST" id="tip-edit-form" class="write-form hidden">
+          <select name="category">
+            <option value="성장 공략" <%= tip.category === '성장 공략' ? 'selected' : '' %>>성장 공략</option>
+            <option value="장비/강화" <%= tip.category === '장비/강화' ? 'selected' : '' %>>장비/강화</option>
+            <option value="전투/PvP" <%= tip.category === '전투/PvP' ? 'selected' : '' %>>전투/PvP</option>
+            <option value="기타" <%= tip.category === '기타' ? 'selected' : '' %>>기타</option>
+          </select>
+          <input type="text" name="title" value="<%= tip.title %>" required />
+          <textarea name="content" rows="4" required><%= tip.content %></textarea>
+          <button type="submit" class="btn-primary btn-sm">저장하기</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

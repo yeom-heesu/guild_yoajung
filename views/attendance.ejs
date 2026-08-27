@@ -1,0 +1,72 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <h2 class="page-title">📅 출석체크</h2>
+
+    <div class="attendance-page-grid">
+      <section class="attendance-card">
+        <div class="attendance-check-circle <%= attendance.todayChecked ? 'checked' : '' %>">
+          <span><%= attendance.todayChecked ? "출석완료" : "출석전" %></span>
+        </div>
+
+        <% if (!currentUser) { %>
+          <p class="attendance-msg">출석체크는 로그인 후 이용할 수 있어요.</p>
+          <a href="/login" class="btn-primary">로그인 하러 가기</a>
+        <% } else if (attendance.todayChecked) { %>
+          <p class="attendance-msg">오늘 출석체크를 완료했어요! 내일 또 만나요 🍨</p>
+        <% } else { %>
+          <!-- TODO(API 연동): POST /api/attendance 로 교체 -->
+          <form action="/attendance/check" method="POST">
+            <button type="submit" class="btn-primary">오늘 출석체크 하기</button>
+          </form>
+        <% } %>
+
+        <div class="attendance-summary">
+          <div class="summary-box">
+            <span class="summary-num"><%= attendance.monthlyCount %>일</span>
+            <span class="summary-label">이번 달 출석</span>
+          </div>
+          <div class="summary-box">
+            <span class="summary-num"><%= attendance.streak %>일</span>
+            <span class="summary-label">연속 출석</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>🏆 출석왕 랭킹</h3>
+        </div>
+        <table class="rank-table">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>닉네임</th>
+              <th>출석 일수</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- TODO(API 연동): GET /api/attendance/ranking 결과로 교체 -->
+            <% attendance.ranking.forEach(r => { %>
+              <tr>
+                <td>
+                  <% if (r.rank <= 3) { %>
+                    <span class="rank-medal rank-<%= r.rank %>">🏅</span>
+                  <% } %>
+                  <%= r.rank %>
+                </td>
+                <td><%= r.nickname %></td>
+                <td><%= r.count %>일</td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

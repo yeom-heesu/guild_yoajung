@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <div class="page-head-row">
+      <h2 class="page-title">📷 길드원 스크린샷</h2>
+      <% if (currentUser) { %>
+        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('photo-write-form')">사진 등록</button>
+      <% } %>
+    </div>
+
+    <% if (currentUser) { %>
+      <!-- TODO(API 연동): POST /api/photos (multipart/form-data) 로 교체 -->
+      <form action="/photos" method="POST" id="photo-write-form" class="write-form hidden">
+        <input type="text" name="title" placeholder="사진 제목" required />
+        <input type="text" name="imageUrl" placeholder="이미지 URL (실제 구현 시 파일 업로드로 교체)" required />
+        <button type="submit" class="btn-primary btn-sm">등록하기</button>
+      </form>
+    <% } %>
+
+    <div class="photo-grid-4">
+      <% photos.forEach(p => { %>
+        <%- include('partials/photo_thumb', { p }) %>
+      <% }) %>
+    </div>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

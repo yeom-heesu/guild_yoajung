@@ -1,0 +1,66 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/polls" class="back-link">← 목록으로</a>
+
+    <% const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0); %>
+
+    <section class="panel detail-panel">
+      <div class="detail-head">
+        <span class="badge-poll-type type-<%= poll.type %>"><%= poll.type %></span>
+        <h2 class="detail-title"><%= poll.title %></h2>
+        <span class="detail-meta"><%= poll.author %> · <%= poll.date %> · 마감 <%= poll.deadline %></span>
+      </div>
+
+      <p class="detail-body"><%= poll.description %></p>
+
+      <% if (!currentUser) { %>
+        <p class="attendance-msg">투표는 로그인 후 참여할 수 있어요.</p>
+        <a href="/login" class="btn-primary btn-sm">로그인 하러 가기</a>
+      <% } %>
+
+      <!-- TODO(API 연동): POST /api/polls/:id/vote 로 교체 -->
+      <form action="/polls/<%= poll.id %>/vote" method="POST" class="poll-option-list">
+        <% poll.options.forEach(o => { %>
+          <% const percent = totalVotes ? Math.round((o.votes.length / totalVotes) * 100) : 0; %>
+          <label class="poll-option-row <%= !currentUser ? 'disabled' : '' %>">
+            <input
+              type="radio"
+              name="optionId"
+              value="<%= o.id %>"
+              <%= userVotedOptionId === o.id ? "checked" : "" %>
+              <%= !currentUser ? "disabled" : "" %>
+              required
+            />
+            <div class="poll-option-content">
+              <div class="poll-option-top">
+                <span class="poll-option-label"><%= o.label %></span>
+                <span class="poll-option-percent"><%= percent %>% (<%= o.votes.length %>표)</span>
+              </div>
+              <div class="poll-option-bar-bg">
+                <div class="poll-option-bar" style="width:<%= percent %>%"></div>
+              </div>
+            </div>
+          </label>
+        <% }) %>
+
+        <% if (currentUser) { %>
+          <button type="submit" class="btn-primary btn-sm">
+            <%= userVotedOptionId ? "투표 변경하기" : "투표하기" %>
+          </button>
+        <% } %>
+      </form>
+
+      <% if (currentUser && currentUser.nickname === poll.author) { %>
+        <form method="POST" action="/polls/<%= poll.id %>/delete" class="detail-actions">
+          <button type="submit" class="btn-danger btn-sm">투표 삭제하기</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

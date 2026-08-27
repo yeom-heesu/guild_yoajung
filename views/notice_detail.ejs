@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/notice" class="back-link">← 목록으로</a>
+
+    <section class="panel detail-panel">
+      <!-- TODO(API 연동): GET /api/notices/:id 결과로 교체 -->
+      <div class="detail-head">
+        <% if (notice.pinned) { %><span class="badge-pin">고정</span><% } %>
+        <h2 class="detail-title"><%= notice.title %></h2>
+        <span class="detail-meta"><%= notice.author %> · <%= notice.date %></span>
+      </div>
+      <div class="detail-body"><%= notice.content %></div>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

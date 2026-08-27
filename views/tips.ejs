@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <div class="page-head-row">
+      <h2 class="page-title">🍯 팁 &amp; 공략</h2>
+      <% if (currentUser) { %>
+        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('tip-write-form')">글쓰기</button>
+      <% } %>
+    </div>
+
+    <% if (currentUser) { %>
+      <!-- TODO(API 연동): POST /api/tips 로 교체 -->
+      <form action="/tips" method="POST" id="tip-write-form" class="write-form hidden">
+        <select name="category">
+          <option value="성장 공략">성장 공략</option>
+          <option value="장비/강화">장비/강화</option>
+          <option value="전투/PvP">전투/PvP</option>
+          <option value="기타">기타</option>
+        </select>
+        <input type="text" name="title" placeholder="제목" required />
+        <textarea name="content" placeholder="내용" rows="4" required></textarea>
+        <button type="submit" class="btn-primary btn-sm">등록하기</button>
+      </form>
+    <% } %>
+
+    <div class="tip-thumb-row">
+      <% tips.forEach(t => { %>
+        <%- include('partials/tip_thumb', { t }) %>
+      <% }) %>
+    </div>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

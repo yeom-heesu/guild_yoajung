@@ -1,0 +1,173 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content home-content">
+    <!-- HERO -->
+    <section class="hero-section">
+      <div class="hero-left">
+        <span class="hero-eyebrow">마비노기 모바일 · 요아정 길드</span>
+        <h1 class="hero-title">매일이 던전 데이,<br />우리들의 길드 요아정!</h1>
+        <p class="hero-sub">월드보스 공략부터 파티 공유까지 — 초보자도 편하게 적응할 수 있는 길드 분위기를 만들어가요.</p>
+      </div>
+      <div class="hero-right">
+        <div class="hero-image-box" style="<%= guildIntro.bannerImage ? `background-image:url('${guildIntro.bannerImage}')` : '' %>">
+          <% if (!guildIntro.bannerImage) { %>
+            <div class="hero-image-placeholder">
+              <span class="hero-image-icon">📷</span>
+              <span>길드 사진을 업로드해주세요</span>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <!-- WELCOME -->
+    <% if (currentUser) { %>
+      <section class="welcome-card">
+        <div class="welcome-text">
+          <span class="welcome-label">WELCOME BACK</span>
+          <h3><%= currentUser.nickname %>님! 어서오세요!</h3>
+          <p>오늘도 요아정 길드와 함께 즐거운 하루 보내세요!</p>
+        </div>
+        <% if (attendance.todayChecked) { %>
+          <span class="welcome-checked">✅ 오늘 출석 완료</span>
+        <% } else { %>
+          <!-- TODO(API 연동): POST /api/attendance 로 교체 -->
+          <form action="/attendance/check" method="POST">
+            <button type="submit" class="btn-primary">🎟 출석체크</button>
+          </form>
+        <% } %>
+      </section>
+    <% } else { %>
+      <section class="welcome-card">
+        <div class="welcome-text">
+          <span class="welcome-label">WELCOME</span>
+          <h3>요아정 길드에 오신 걸 환영해요!</h3>
+          <p>로그인하고 출석체크와 다양한 길드 활동에 참여해보세요.</p>
+        </div>
+        <a href="/login" class="btn-primary">로그인</a>
+      </section>
+    <% } %>
+
+    <!-- GUILD MENU -->
+    <section class="guild-menu-section">
+      <span class="section-eyebrow">GUILD MENU</span>
+      <h2 class="section-title">요아정 길드에서 확인해보세요</h2>
+      <div class="guild-menu-grid">
+        <a href="/members" class="guild-menu-card menu-pink">
+          <span class="menu-dot"></span>
+          <h4>멤버소개</h4>
+          <p>길드원 정예대와 캐릭터 정보를 만나보세요</p>
+        </a>
+        <a href="/notice" class="guild-menu-card menu-blue">
+          <span class="menu-dot"></span>
+          <h4>공지사항</h4>
+          <p>길드 소식과 이벤트 정보를 안내드려요</p>
+        </a>
+        <a href="/tips" class="guild-menu-card menu-yellow">
+          <span class="menu-dot"></span>
+          <h4>팁 &amp; 공략</h4>
+          <p>레이드·장비 강화 노하우를 공유해요</p>
+        </a>
+        <a href="/photos" class="guild-menu-card menu-green">
+          <span class="menu-dot"></span>
+          <h4>스크린샷</h4>
+          <p>길드원들의 추억을 만나보세요</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section class="members-section">
+      <span class="section-eyebrow">GUILD MEMBERS</span>
+      <h2 class="section-title">멤버 소개</h2>
+      <p class="section-desc">요아정의 정예대, 초코라떼와 어이스크림을 소개합니다</p>
+
+      <div class="member-showcase-grid">
+        <% members.slice(0, 8).forEach((m, i) => { %>
+          <a href="/members/<%= m.id %>" class="member-showcase-card palette-<%= (i % 8) + 1 %>">
+            <span class="member-showcase-num"><%= i + 1 %></span>
+            <div class="member-showcase-photo" style="background-image:url('<%= m.avatar %>')"></div>
+            <span class="member-showcase-name"><%= m.nickname %></span>
+            <span class="member-showcase-intro"><%= m.intro %></span>
+          </a>
+        <% }) %>
+      </div>
+
+      <div class="section-more-wrap">
+        <a href="/members" class="btn-outline">멤버 더보기</a>
+      </div>
+    </section>
+
+    <!-- 팁 & 공략 + 공지 -->
+    <section class="tips-section">
+      <h2 class="section-title">최신 팁 &amp; 공략</h2>
+
+      <%
+        const catColor = {
+          "성장 공략": "#f6c26b",
+          "장비/강화": "#8fc7e8",
+          "전투/PvP": "#f29ca0",
+          "기타": "#c9c2ea",
+        };
+      %>
+
+      <div class="tips-row">
+        <% tips.slice(0, 3).forEach(t => { %>
+          <a href="/tips/<%= t.id %>" class="tip-showcase-card">
+            <span class="badge-cat-solid" style="background-color:<%= catColor[t.category] || '#c9c2ea' %>"><%= t.category %></span>
+            <h4><%= t.title %></h4>
+            <span class="tip-showcase-meta"><%= t.author %> · <%= t.date %></span>
+          </a>
+        <% }) %>
+      </div>
+
+      <div class="notice-row">
+        <% notices.filter(n => n.pinned).slice(0, 2).forEach(n => { %>
+          <a href="/notice/<%= n.id %>" class="notice-showcase-card">
+            <span class="badge-notice">📌 NOTICE</span>
+            <h4><%= n.title %></h4>
+            <span class="notice-showcase-meta"><%= n.author %> · <%= n.date %></span>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+
+    <!-- TODO(기획 외 추가): 투표게시판 미리보기 -->
+    <section class="polls-preview-section">
+      <div class="panel-head">
+        <h2 class="section-title" style="margin:0;">🗳️ 투표게시판</h2>
+        <a href="/polls" class="panel-more">더보기</a>
+      </div>
+      <div class="poll-mini-list">
+        <% polls.slice(0, 2).forEach(poll => { %>
+          <% const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0); %>
+          <a href="/polls/<%= poll.id %>" class="poll-mini-card">
+            <div class="poll-mini-head">
+              <span class="badge-poll-type type-<%= poll.type %>"><%= poll.type %></span>
+              <span class="poll-mini-deadline">~<%= poll.deadline %></span>
+            </div>
+            <span class="poll-mini-title"><%= poll.title %></span>
+            <span class="poll-mini-meta">총 <%= totalVotes %>표 참여</span>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+
+    <!-- 스크린샷 -->
+    <section class="screenshots-section">
+      <h2 class="section-title">길드원 스크린샷</h2>
+      <div class="screenshot-row">
+        <% photos.slice(0, 4).forEach(p => { %>
+          <a href="/photos/<%= p.id %>" class="screenshot-card" style="background-image:url('<%= p.imageUrl %>')">
+            <span class="screenshot-caption"><%= p.title %></span>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,52 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <div class="page-head-row">
+      <h2 class="page-title">🗳️ 투표게시판</h2>
+      <% if (currentUser) { %>
+        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('poll-write-form')">투표 만들기</button>
+      <% } %>
+    </div>
+
+    <% if (currentUser) { %>
+      <!-- TODO(API 연동): POST /api/polls 로 교체 -->
+      <form action="/polls" method="POST" id="poll-write-form" class="write-form hidden">
+        <select name="type">
+          <option value="어비스">어비스</option>
+          <option value="연주회">연주회</option>
+          <option value="기타">기타</option>
+        </select>
+        <input type="text" name="title" placeholder="투표 제목 (예: 이번 주 어비스 요일 투표)" required />
+        <textarea name="description" placeholder="투표 설명" rows="2"></textarea>
+        <input type="date" name="deadline" required />
+        <textarea
+          name="optionsText"
+          placeholder="선택지를 한 줄에 하나씩 입력하세요.&#10;예)&#10;8/30(토) 저녁 9시&#10;8/31(일) 오후 3시"
+          rows="4"
+          required
+        ></textarea>
+        <button type="submit" class="btn-primary btn-sm">투표 등록하기</button>
+      </form>
+    <% } %>
+
+    <div class="poll-list">
+      <% polls.forEach(poll => { %>
+        <% const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0); %>
+        <a href="/polls/<%= poll.id %>" class="poll-card">
+          <div class="poll-card-head">
+            <span class="badge-poll-type type-<%= poll.type %>"><%= poll.type %></span>
+            <span class="poll-card-deadline">~<%= poll.deadline %></span>
+          </div>
+          <h3 class="poll-card-title"><%= poll.title %></h3>
+          <p class="poll-card-desc"><%= poll.description %></p>
+          <span class="poll-card-meta"><%= poll.author %> · 총 <%= totalVotes %>표</span>
+        </a>
+      <% }) %>
+    </div>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,35 @@
+<%
+  const navItems = [
+    { href: "/",          label: "홈",         icon: "🏠" },
+    { href: "/attendance",label: "출석체크",   icon: "📅" },
+    { href: "/notice",    label: "공지사항",   icon: "📢" },
+    { href: "/tips",      label: "팁 & 공략",  icon: "🍯" },
+    { href: "/photos",    label: "스크린샷",   icon: "📷" },
+    { href: "/polls",     label: "투표",       icon: "🗳️" },
+    { href: "/members",   label: "길드원",     icon: "👥" },
+  ];
+%>
+
+<!-- 데스크탑: 좌측 사이드바 (홈 화면에서는 CSS로 숨김) -->
+<nav class="sidenav">
+  <ul>
+    <% navItems.forEach(item => { %>
+      <li>
+        <a href="<%= item.href %>" class="<%= currentPath === item.href ? 'active' : '' %>">
+          <span class="nav-icon"><%= item.icon %></span>
+          <span class="nav-label"><%= item.label %></span>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</nav>
+
+<!-- 모바일: 하단 탭바 -->
+<nav class="bottomnav">
+  <% navItems.forEach(item => { %>
+    <a href="<%= item.href %>" class="<%= currentPath === item.href ? 'active' : '' %>">
+      <span class="nav-icon"><%= item.icon %></span>
+      <span class="nav-label"><%= item.label %></span>
+    </a>
+  <% }) %>
+</nav>
