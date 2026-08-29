@@ -114,7 +114,13 @@
           <div class="weekly-vote-login">
             <img src="/images/nao.png" alt="" class="weekly-vote-login-img" />
             <p>투표를 하려면 로그인이 필요해요.</p>
-            <a href="/login" class="weekly-vote-login-btn">📞 로그인</a>
+             <button type="button" class="btn-primary" data-open-attendance-modal>
+            <picture>
+              <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
+              <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
+            </picture>
+            로그인
+          </button>
           </div>
         </div>
       <% } else { %>
