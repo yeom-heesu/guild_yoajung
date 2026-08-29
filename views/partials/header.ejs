@@ -18,17 +18,23 @@
 
         <!-- 데스크탑 전용 GNB (피그마 상단 탭) -->
         <nav class="topnav-gnb">
-          <a href="/members" class="<%= currentPath.startsWith('/members') ? 'active' : '' %>">멤버소개</a>
-          <a href="/notice" class="<%= currentPath.startsWith('/notice') ? 'active' : '' %>">공지사항</a>
-          <a href="/tips" class="<%= currentPath.startsWith('/tips') ? 'active' : '' %>">팁 &amp; 공략</a>
-          <a href="/photos" class="<%= currentPath.startsWith('/photos') ? 'active' : '' %>">스크린샷</a>
+          <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">홈</a>
+          <a href="/#section-members" class="<%= currentPath.startsWith('/members') ? 'active' : '' %>">멤버소개</a>
+          <a href="/#section-notice" class="<%= currentPath.startsWith('/notice') ? 'active' : '' %>">공지사항</a>
+          <a href="/#section-tips" class="<%= currentPath.startsWith('/tips') ? 'active' : '' %>">팁 &amp; 공략</a>
+          <a href="/#section-photos" class="<%= currentPath.startsWith('/photos') ? 'active' : '' %>">스크린샷</a>
         </nav>
 
         <div class="topbar-right">
-          <!-- TODO(기획 외 추가): 가입 문의 - 실제로는 디스코드 초대 링크나 신청 폼으로 교체 -->
-          <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+          <% if (!currentUser) { %>
+            <!-- TODO(기획 외 추가): 가입 문의 - 실제로는 디스코드 초대 링크나 신청 폼으로 교체 -->
+            <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+          <% } %>
           <% if (currentUser) { %>
-            <span class="topbar-user-name"><%= currentUser.nickname %>님</span>
+            <span class="topbar-user-name">
+              <img src="<%= currentUser.avatar %>" alt="" class="topbar-user-avatar" />
+              <%= currentUser.nickname %>님
+            </span>
             <form action="/logout" method="POST" class="inline-form">
               <button type="submit" class="btn-ghost-sm">로그아웃</button>
             </form>

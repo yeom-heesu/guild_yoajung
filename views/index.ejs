@@ -7,9 +7,9 @@
     <!-- HERO -->
     <section class="hero-section">
       <div class="hero-left">
-        <span class="hero-eyebrow">마비노기 모바일 · 요아정 길드</span>
-        <h1 class="hero-title">매일이 던전 데이,<br />우리들의 길드 요아정!</h1>
-        <p class="hero-sub">월드보스 공략부터 파티 공유까지 — 초보자도 편하게 적응할 수 있는 길드 분위기를 만들어가요.</p>
+        <span class="hero-eyebrow">마비노기 모바일 · 데이안 서버</span>
+        <h1 class="hero-title">매일 즐거운 모비노기,<br />우리들의 길드 요아정!</h1>
+        <p class="hero-sub">출석체크하고, 어비스 & 연주회 일정 투표 공략 공유까지! <br> 달콤하게 뭉친 길드원들과 함께해요.</p>
       </div>
       <div class="hero-right">
         <div class="hero-image-box" style="<%= guildIntro.bannerImage ? `background-image:url('${guildIntro.bannerImage}')` : '' %>">
@@ -31,25 +31,50 @@
           <h3><%= currentUser.nickname %>님! 어서오세요!</h3>
           <p>오늘도 요아정 길드와 함께 즐거운 하루 보내세요!</p>
         </div>
-        <% if (attendance.todayChecked) { %>
-          <span class="welcome-checked">✅ 오늘 출석 완료</span>
-        <% } else { %>
-          <!-- TODO(API 연동): POST /api/attendance 로 교체 -->
-          <form action="/attendance/check" method="POST">
-            <button type="submit" class="btn-primary">🎟 출석체크</button>
-          </form>
-        <% } %>
+          <button type="button" class="btn-primary" data-open-attendance-modal>
+            <picture>
+              <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
+              <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
+            </picture>
+            출석체크
+          </button>
       </section>
     <% } else { %>
       <section class="welcome-card">
         <div class="welcome-text">
-          <span class="welcome-label">WELCOME</span>
-          <h3>요아정 길드에 오신 걸 환영해요!</h3>
-          <p>로그인하고 출석체크와 다양한 길드 활동에 참여해보세요.</p>
+          <span class="welcome-label">GUILD MEMBER ONLY</span>
+          <h3>로그인하고 출석체크에 참여해보세요!</h3>
+          <p>길드원이라면 로그인 후 매일 출석하고 도장을 모아보세요</p>
         </div>
-        <a href="/login" class="btn-primary">로그인</a>
+        <a href="/login" class="btn-primary">
+          <picture>
+              <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
+              <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
+            </picture>
+          출석체크</a>
       </section>
     <% } %>
+
+    <!-- ATTENDANCE RANKING -->
+    <section class="attendance-rank-panel">
+      <div class="attendance-rank-head">
+        <div>
+          <span class="attendance-rank-eyebrow">ATTENDANCE RANKING</span>
+          <h3 class="attendance-rank-title"><%= new Date().getMonth() + 1 %>월 출석왕 TOP 3</h3>
+        </div>
+        <span class="attendance-rank-note">이달의 출석왕에게 소소한 선물을 드려요!</span>
+      </div>
+      <div class="attendance-rank-list">
+        <% const medalInfo = { 1: "금장", 2: "은장", 3: "동장" }; %>
+        <% attendance.ranking.slice(0, 3).forEach(r => { %>
+          <div class="attendance-rank-row">
+            <span class="rank-badge-circle rank-<%= r.rank %>"><%= r.rank %></span>
+            <span class="attendance-rank-name"><%= r.nickname %></span>
+            <span class="attendance-rank-days">출석 <%= r.count %>일</span>
+          </div>
+        <% }) %>
+      </div>
+    </section>
 
     <!-- GUILD MENU -->
     <section class="guild-menu-section">
@@ -79,11 +104,72 @@
       </div>
     </section>
 
+    <!-- WEEKLY VOTE -->
+    <section class="weekly-vote-section">
+      <span class="section-eyebrow">WEEKLY VOTE</span>
+      <h2 class="section-title">이번 주 투표에 참여해보세요</h2>
+
+      <% if (!currentUser) { %>
+        <div class="weekly-vote-panel weekly-vote-panel-single">
+          <div class="weekly-vote-login">
+            <img src="/images/nao.png" alt="" class="weekly-vote-login-img" />
+            <p>투표를 하려면 로그인이 필요해요.</p>
+            <a href="/login" class="weekly-vote-login-btn">📞 로그인</a>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="weekly-vote-panel">
+          <%
+            const voteCols = [
+              { type: "concert", title: "금주 연주회 투표", voted: concertVoted, stats: concertStats },
+              { type: "abyss", title: "금주 어비스 투표", voted: abyssVoted, stats: abyssStats },
+            ];
+          %>
+          <% voteCols.forEach(col => { %>
+            <div class="weekly-vote-col">
+              <div class="weekly-vote-head">
+                <h3><%= col.title %></h3>
+                <button type="button" class="weekly-vote-result-link" data-open-vote-result="<%= col.type %>">결과보기 →</button>
+              </div>
+
+              <% if (col.voted) { %>
+                <div class="weekly-vote-done">
+                  <strong><%= currentUser.nickname %>님!</strong>
+                  <span><%= col.title %>를 완료하였어요!</span>
+                </div>
+              <% } else { %>
+                <p class="weekly-vote-sub">참여 가능한 날짜를 골라주세요.</p>
+                <div class="weekly-vote-days" data-vote-days>
+                  <% voteDayKeys.forEach(dayKey => { %>
+                    <button type="button" class="weekly-vote-day-btn" data-day="<%= dayKey %>"><%= voteDayLabels[dayKey] %></button>
+                  <% }) %>
+                </div>
+
+                <form action="/weekly-vote/<%= col.type %>" method="POST" class="weekly-vote-time-form" data-time-form hidden>
+                  <input type="hidden" name="day" data-day-input />
+                  <p class="weekly-vote-sub">참여를 원하는 시간대를 골라주세요.</p>
+                  <div class="weekly-vote-times" data-weekday-times hidden>
+                    <button type="submit" name="time" value="20" class="weekly-vote-time-btn">20:00</button>
+                    <button type="submit" name="time" value="21" class="weekly-vote-time-btn">21:00</button>
+                    <button type="submit" name="time" value="22" class="weekly-vote-time-btn">22:00</button>
+                  </div>
+                  <div class="weekly-vote-times" data-weekend-times hidden>
+                    <button type="submit" name="time" value="12" class="weekly-vote-time-btn">12:00</button>
+                    <button type="submit" name="time" value="15" class="weekly-vote-time-btn">15:00</button>
+                    <button type="submit" name="time" value="20" class="weekly-vote-time-btn">20:00</button>
+                  </div>
+                </form>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
     <!-- MEMBERS -->
-    <section class="members-section">
+    <section class="members-section" id="section-members">
       <span class="section-eyebrow">GUILD MEMBERS</span>
       <h2 class="section-title">멤버 소개</h2>
-      <p class="section-desc">요아정의 정예대, 초코라떼와 어이스크림을 소개합니다</p>
 
       <div class="member-showcase-grid">
         <% members.slice(0, 8).forEach((m, i) => { %>
@@ -100,8 +186,26 @@
         <a href="/members" class="btn-outline">멤버 더보기</a>
       </div>
     </section>
-
-    <!-- 팁 & 공략 + 공지 -->
+<!-- 공지사항 -->
+    <section class="notice-preview-section" id="section-notice">
+      <div class="notice-preview-panel">
+        <span class="notice-preview-icon"></span>
+        <div class="notice-preview-list">
+          <% notices.filter(n => n.pinned).slice(0, 2).forEach(n => { %>
+            <a href="/notice/<%= n.id %>" class="notice-preview-card">
+              <span class="notice-preview-label">NOTICE</span>
+              <h4><%= n.title %></h4>
+              <span class="notice-preview-meta"><%= n.author %> · <%= n.date %></span>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+      <div class="section-more-wrap">
+        <a href="/notice" class="btn-outline">공지사항 더보기</a>
+      </div>
+    </section>
+    
+    <!-- 팁 & 공략 -->
     <section class="tips-section">
       <h2 class="section-title">최신 팁 &amp; 공략</h2>
 
@@ -114,7 +218,7 @@
         };
       %>
 
-      <div class="tips-row">
+      <div class="tips-row" id="section-tips">
         <% tips.slice(0, 3).forEach(t => { %>
           <a href="/tips/<%= t.id %>" class="tip-showcase-card">
             <span class="badge-cat-solid" style="background-color:<%= catColor[t.category] || '#c9c2ea' %>"><%= t.category %></span>
@@ -124,40 +228,13 @@
         <% }) %>
       </div>
 
-      <div class="notice-row">
-        <% notices.filter(n => n.pinned).slice(0, 2).forEach(n => { %>
-          <a href="/notice/<%= n.id %>" class="notice-showcase-card">
-            <span class="badge-notice">📌 NOTICE</span>
-            <h4><%= n.title %></h4>
-            <span class="notice-showcase-meta"><%= n.author %> · <%= n.date %></span>
-          </a>
-        <% }) %>
-      </div>
-    </section>
-
-    <!-- TODO(기획 외 추가): 투표게시판 미리보기 -->
-    <section class="polls-preview-section">
-      <div class="panel-head">
-        <h2 class="section-title" style="margin:0;">🗳️ 투표게시판</h2>
-        <a href="/polls" class="panel-more">더보기</a>
-      </div>
-      <div class="poll-mini-list">
-        <% polls.slice(0, 2).forEach(poll => { %>
-          <% const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0); %>
-          <a href="/polls/<%= poll.id %>" class="poll-mini-card">
-            <div class="poll-mini-head">
-              <span class="badge-poll-type type-<%= poll.type %>"><%= poll.type %></span>
-              <span class="poll-mini-deadline">~<%= poll.deadline %></span>
-            </div>
-            <span class="poll-mini-title"><%= poll.title %></span>
-            <span class="poll-mini-meta">총 <%= totalVotes %>표 참여</span>
-          </a>
-        <% }) %>
+      <div class="section-more-wrap">
+        <a href="/tips" class="btn-outline">팁 &amp; 공략 더보기</a>
       </div>
     </section>
 
     <!-- 스크린샷 -->
-    <section class="screenshots-section">
+    <section class="screenshots-section" id="section-photos">
       <h2 class="section-title">길드원 스크린샷</h2>
       <div class="screenshot-row">
         <% photos.slice(0, 4).forEach(p => { %>
@@ -166,8 +243,13 @@
           </a>
         <% }) %>
       </div>
+      <div class="section-more-wrap">
+        <a href="/photos" class="btn-outline">스크린샷 더보기</a>
+      </div>
     </section>
   </main>
 </div>
 
+<%- include('partials/attendance_modal') %>
+<%- include('partials/vote_result_modal') %>
 <%- include('partials/footer') %>

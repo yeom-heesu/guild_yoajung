@@ -17,11 +17,9 @@
           <a href="/login" class="btn-primary">로그인 하러 가기</a>
         <% } else if (attendance.todayChecked) { %>
           <p class="attendance-msg">오늘 출석체크를 완료했어요! 내일 또 만나요 🍨</p>
+          <button type="button" class="btn-outline" data-open-attendance-modal>도장판 보기</button>
         <% } else { %>
-          <!-- TODO(API 연동): POST /api/attendance 로 교체 -->
-          <form action="/attendance/check" method="POST">
-            <button type="submit" class="btn-primary">오늘 출석체크 하기</button>
-          </form>
+          <button type="button" class="btn-primary" data-open-attendance-modal>오늘 출석체크 하기</button>
         <% } %>
 
         <div class="attendance-summary">
@@ -69,4 +67,5 @@
   </main>
 </div>
 
+<%- include('partials/attendance_modal') %>
 <%- include('partials/footer') %>

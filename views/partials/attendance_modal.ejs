@@ -1,0 +1,35 @@
+<!-- 출석체크 모달 : PC/모바일에 따라 stamp_before_*/stamp_complete_* 이미지를 사용합니다. -->
+<div class="attendance-modal-overlay" id="attendanceModalOverlay" hidden>
+  <div class="attendance-modal" role="dialog" aria-modal="true" aria-labelledby="attendanceModalTitle">
+    <button type="button" class="attendance-modal-close" id="attendanceModalClose" aria-label="닫기">✕</button>
+
+    <span class="attendance-modal-eyebrow"><%= attMonthLabel %>월 출석체크</span>
+    <h3 class="attendance-modal-title" id="attendanceModalTitle">
+      <%= currentUser ? currentUser.nickname : "길드원" %>님, <%= attendance.todayChecked ? "오늘 출석하셨어요!" : "오늘 출석체크 해볼까요?" %>
+    </h3>
+    <p class="attendance-modal-sub">매일 출석하고 고양이 발바닥 도장을 모아보세요!</p>
+
+    <div class="attendance-stamp-grid">
+      <% for (let d = 1; d <= attDaysInMonth; d++) { %>
+        <% const isChecked = attendance.checkedDays.includes(d); %>
+        <div class="attendance-stamp-cell <%= isChecked ? 'checked' : '' %> <%= d === attTodayDay ? 'is-today' : '' %>">
+          <picture>
+            <source media="(max-width: 860px)" srcset="/images/<%= isChecked ? 'stamp_complete_mobile' : 'stamp_before_mobile' %>.png" />
+            <img src="/images/<%= isChecked ? 'stamp_complete_pc' : 'stamp_before_pc' %>.png" alt="" class="attendance-stamp-icon" />
+          </picture>
+          <span class="attendance-stamp-day"><%= d %></span>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (currentUser) { %>
+      <form action="/attendance/check" method="POST">
+        <button type="submit" class="attendance-modal-submit" <%= attendance.todayChecked ? "disabled" : "" %>>
+          <%= attendance.todayChecked ? "✔ 출석완료!" : "출석하기" %>
+        </button>
+      </form>
+    <% } else { %>
+      <a href="/login" class="attendance-modal-submit">로그인하고 출석하기</a>
+    <% } %>
+  </div>
+</div>

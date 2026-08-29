@@ -1,0 +1,34 @@
+<!-- 이번 주 투표(연주회/어비스) 결과보기 모달 -->
+<%
+  const voteResultModals = [
+    { type: "concert", title: "금주 연주회 투표 결과", stats: concertStats },
+    { type: "abyss", title: "금주 어비스 투표 결과", stats: abyssStats },
+  ];
+%>
+<% voteResultModals.forEach(modal => { %>
+  <div class="vote-result-overlay" id="voteResultOverlay-<%= modal.type %>" hidden>
+    <div class="vote-result-modal" role="dialog" aria-modal="true">
+      <h3 class="vote-result-title"><%= modal.title %></h3>
+      <p class="vote-result-sub">총 참여인원: <%= modal.stats.total %>명</p>
+
+      <div class="vote-result-list">
+        <% modal.stats.days.forEach(day => { %>
+          <div class="vote-result-row">
+            <div class="vote-result-row-head">
+              <span class="vote-result-day"><%= day.label %></span>
+              <span class="vote-result-count"><%= day.total %>명</span>
+            </div>
+            <div class="vote-result-bar-track">
+              <div class="vote-result-bar-fill" style="width:<%= day.percent %>%"></div>
+            </div>
+            <span class="vote-result-breakdown"><%= day.breakdownText %></span>
+          </div>
+        <% }) %>
+      </div>
+
+      <div class="vote-result-close-wrap">
+        <button type="button" class="btn-outline" data-close-vote-result>닫기</button>
+      </div>
+    </div>
+  </div>
+<% }) %>

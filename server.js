@@ -4,7 +4,7 @@ const path = require("path");
 
 // TODO(API 연동): 지금은 로컬 목업 데이터를 사용합니다.
 // 실제 서비스 전환 시 이 require 대신 API 클라이언트(axios 등)로 교체하세요.
-const { guildIntro, members, notices, tips, photos, polls, attendance, users } = require("./data/mockData");
+const { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance, users } = require("./data/mockData");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +42,95 @@ function requireLogin(req, res, next) {
   next();
 }
 
+// 출석 도장판을 월마다 초기화 + 출석 모달에 필요한 날짜 정보 계산
+function syncAttendanceMonth() {
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+  if (attendance.checkedMonth !== monthKey) {
+    attendance.checkedMonth = monthKey;
+    attendance.checkedDays = [];
+    attendance.todayChecked = false;
+    attendance.monthlyCount = 0;
+    attendance.streak = 0;
+  }
+
+  return {
+    attMonthLabel: now.getMonth() + 1,
+    attDaysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+    attTodayDay: now.getDate(),
+  };
+}
+
+// ---------- 이번 주 투표(연주회/어비스) ----------
+const VOTE_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const VOTE_DAY_LABELS = { mon: "월", tue: "화", wed: "수", thu: "목", fri: "금", sat: "토", sun: "일" };
+const VOTE_WEEKDAY_TIMES = [20, 21, 22];
+const VOTE_WEEKEND_TIMES = [12, 15, 20];
+
+function timesForDay(dayKey) {
+  return dayKey === "sat" || dayKey === "sun" ? VOTE_WEEKEND_TIMES : VOTE_WEEKDAY_TIMES;
+}
+
+// 이번 주 월요일 날짜(YYYY-MM-DD)를 주차 식별 키로 사용
+function currentWeekKey() {
+  const now = new Date();
+  const day = (now.getDay() + 6) % 7; // 월=0 ... 일=6
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day);
+  return monday.toISOString().slice(0, 10);
+}
+
+// 매주 월요일이 지나면 두 투표(연주회/어비스) 집계를 초기화
+function syncWeeklyVote() {
+  const weekKey = currentWeekKey();
+  if (weeklyVote.weekKey !== weekKey) {
+    weeklyVote.weekKey = weekKey;
+    ["concert", "abyss"].forEach((type) => {
+      VOTE_DAY_KEYS.forEach((dayKey) => {
+        const emptySlots = {};
+        timesForDay(dayKey).forEach((t) => (emptySlots[t] = []));
+        weeklyVote[type].slotsByDay[dayKey] = emptySlots;
+      });
+    });
+  }
+}
+
+// 이번 주에 해당 유저가 이미 투표했는지 확인 (연주회/어비스 각각 1회만 가능)
+function hasVoted(type, nickname) {
+  if (!nickname) return false;
+  return VOTE_DAY_KEYS.some((dayKey) =>
+    Object.values(weeklyVote[type].slotsByDay[dayKey]).some((names) => names.includes(nickname))
+  );
+}
+
+// 결과보기 모달에 쓸 요일별 집계(참여 인원, 막대 비율, 시간대별 텍스트) 계산
+function computeVoteStats(type) {
+  const dayTotals = VOTE_DAY_KEYS.map((dayKey) => {
+    const slots = weeklyVote[type].slotsByDay[dayKey];
+    const times = timesForDay(dayKey);
+    const total = times.reduce((sum, t) => sum + slots[t].length, 0);
+    return { dayKey, total, times };
+  });
+
+  const grandTotal = dayTotals.reduce((sum, d) => sum + d.total, 0);
+  const maxTotal = Math.max(1, ...dayTotals.map((d) => d.total));
+
+  const days = dayTotals.map((d) => {
+    const slots = weeklyVote[type].slotsByDay[d.dayKey];
+    const breakdownText = d.times.map((t) => `${t}시 ${slots[t].length}명`).join(" · ");
+    return {
+      dayKey: d.dayKey,
+      label: VOTE_DAY_LABELS[d.dayKey],
+      total: d.total,
+      percent: d.total > 0 ? Math.max(6, Math.round((d.total / maxTotal) * 100)) : 0,
+      breakdownText,
+    };
+  });
+
+  return { total: grandTotal, days };
+}
+
 // ---------- 로그인 / 로그아웃 ----------
 app.get("/login", (req, res) => {
   if (req.session.user) return res.redirect("/");
@@ -76,29 +165,65 @@ app.post("/logout", (req, res) => {
 
 // ---------- 대시보드(홈) : 비회원도 접근 가능 ----------
 app.get("/", (req, res) => {
+  syncWeeklyVote();
+  const nickname = req.session.user && req.session.user.nickname;
+
   res.render("index", {
     pageTitle: "홈",
     guildIntro,
     members,
     tips,
     photos,
-    polls,
     notices,
     attendance,
+    ...syncAttendanceMonth(),
+    voteDayKeys: VOTE_DAY_KEYS,
+    voteDayLabels: VOTE_DAY_LABELS,
+    concertVoted: hasVoted("concert", nickname),
+    abyssVoted: hasVoted("abyss", nickname),
+    concertStats: computeVoteStats("concert"),
+    abyssStats: computeVoteStats("abyss"),
   });
+});
+
+// 연주회/어비스 요일·시간 투표 (사용자당 주 1회씩만 가능)
+app.post("/weekly-vote/:type", requireLogin, (req, res) => {
+  // TODO(API 연동): POST /api/weekly-vote 로 교체
+  const { type } = req.params;
+  if (type !== "concert" && type !== "abyss") return res.redirect("/");
+
+  syncWeeklyVote();
+
+  const { day } = req.body;
+  const time = Number(req.body.time);
+  const nickname = req.session.user.nickname;
+
+  if (VOTE_DAY_KEYS.includes(day) && timesForDay(day).includes(time) && !hasVoted(type, nickname)) {
+    weeklyVote[type].slotsByDay[day][time].push(nickname);
+  }
+
+  res.redirect(req.get("Referer") || "/");
 });
 
 // ---------- 출석체크 : 조회는 비회원도 가능, 체크는 로그인 필요 ----------
 app.get("/attendance", (req, res) => {
-  res.render("attendance", { pageTitle: "출석체크", attendance });
+  res.render("attendance", { pageTitle: "출석체크", attendance, ...syncAttendanceMonth() });
 });
 
 app.post("/attendance/check", requireLogin, (req, res) => {
   // TODO(API 연동): POST /api/attendance 로 교체 (오늘 날짜 + req.session.user.id 전달)
-  attendance.todayChecked = true;
-  attendance.monthlyCount += 1;
-  attendance.streak += 1;
-  res.redirect("/attendance");
+  const { attTodayDay } = syncAttendanceMonth();
+
+  if (!attendance.todayChecked) {
+    if (!attendance.checkedDays.includes(attTodayDay)) {
+      attendance.checkedDays.push(attTodayDay);
+    }
+    attendance.todayChecked = true;
+    attendance.monthlyCount = attendance.checkedDays.length;
+    attendance.streak += 1;
+  }
+
+  res.redirect(req.get("Referer") || "/attendance");
 });
 
 // ---------- 공지사항 ----------

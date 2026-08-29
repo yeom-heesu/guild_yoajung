@@ -24,12 +24,23 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   background: var(--cream);
   color: var(--brown-deep);
+}
+
+#section-members,
+#section-tips,
+#section-notice,
+#section-photos {
+  scroll-margin-top: 90px;
 }
 
 a { text-decoration: none; color: inherit; }
@@ -40,8 +51,8 @@ ul { list-style: none; margin: 0; padding: 0; }
    상단 바 + GNB
 ========================================================= */
 .topbar {
-  background: linear-gradient(135deg, var(--pink-strong), var(--pink));
-  box-shadow: var(--shadow-soft);
+  background: var(--white);
+  box-shadow: 0 2px 10px rgba(74, 44, 29, 0.06);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -63,31 +74,52 @@ ul { list-style: none; margin: 0; padding: 0; }
   gap: 8px;
   font-weight: 800;
   font-size: 1.2rem;
-  color: var(--white);
+  color: var(--brown-deep);
   letter-spacing: -0.5px;
   flex-shrink: 0;
 }
 
-.brand-emblem { font-size: 1.3rem; }
+.brand-emblem {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brown-deep);
+  font-size: 0;
+  color: transparent;
+}
 
 .topnav-gnb {
   display: none;
   align-items: center;
-  gap: 26px;
-  flex: 1;
+  justify-content: center;
+  gap: 4px;
+  background: #FDD9E2;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px;
+  width: fit-content;
+  margin: 0 auto;
 }
 
 .topnav-gnb a {
-  color: var(--white);
+  color: var(--brown-deep);
   font-size: 0.88rem;
   font-weight: 600;
-  opacity: 0.9;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #FDD9E2;
+  transition: background 0.2s, color 0.2s;
 }
 
-.topnav-gnb a:hover,
+.topnav-gnb a:hover {
+  background: #FF8B69;
+  color: var(--white);
+}
+
 .topnav-gnb a.active {
-  opacity: 1;
-  text-decoration: underline;
+  background: #FF8B69;
+  color: var(--white);
 }
 
 .topbar-right {
@@ -108,22 +140,33 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .topbar-user-name {
-  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brown-deep);
   font-size: 0.85rem;
+}
+
+.topbar-user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .inline-form { display: inline; }
 
 .btn-ghost-sm {
-  background: rgba(255, 255, 255, 0.25);
-  color: var(--white);
+  background: var(--pink-light);
+  color: var(--brown-deep);
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.78rem;
   transition: background 0.2s;
 }
 
-.btn-ghost-sm:hover { background: rgba(255, 255, 255, 0.4); }
+.btn-ghost-sm:hover { background: var(--pink); color: var(--white); }
 
 @media (min-width: 861px) {
   .topnav-gnb { display: flex; }
@@ -221,6 +264,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(216, 95, 142, 0.45); }
+.btn-attendance-icon { width: 18px; height: auto; vertical-align: middle; margin-right: 6px; }
 .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
 
 .btn-outline {
@@ -246,7 +290,7 @@ ul { list-style: none; margin: 0; padding: 0; }
    HERO
 ========================================================= */
 .hero-section {
-  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-strong) 100%);
+  background: #FDD9E2;
   border-radius: var(--radius-lg);
   padding: 40px;
   display: flex;
@@ -256,9 +300,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .hero-left { flex: 1; min-width: 0; }
-.hero-eyebrow { display: inline-block; color: var(--white); font-size: 0.78rem; font-weight: 700; opacity: 0.9; margin-bottom: 10px; }
-.hero-title { color: var(--white); font-size: 1.9rem; font-weight: 800; line-height: 1.35; margin: 0 0 14px; }
-.hero-sub { color: rgba(255, 255, 255, 0.92); font-size: 0.9rem; line-height: 1.6; margin: 0; max-width: 420px; }
+.hero-eyebrow { display: inline-block; color: #D8567F; font-size: 0.78rem; font-weight: 700; opacity: 0.9; margin-bottom: 10px; }
+.hero-title { color: #6B4226; font-size: 1.9rem; font-weight: 800; line-height: 1.35; margin: 0 0 14px; }
+.hero-sub { color: #6B4226; font-size: 0.9rem; line-height: 1.6; margin: 0; max-width: 420px; }
 
 .hero-right { flex-shrink: 0; width: 260px; }
 
@@ -286,7 +330,15 @@ ul { list-style: none; margin: 0; padding: 0; }
   padding: 10px;
 }
 
-.hero-image-icon { font-size: 1.6rem; }
+.hero-image-icon {
+  display: inline-block;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--brown-light);
+  font-size: 0;
+  color: transparent;
+}
 
 /* =========================================================
    WELCOME 카드
@@ -306,6 +358,72 @@ ul { list-style: none; margin: 0; padding: 0; }
 .welcome-text h3 { margin: 0 0 4px; font-size: 1.1rem; color: var(--brown-deep); }
 .welcome-text p { margin: 0; font-size: 0.82rem; color: var(--gray-text); }
 .welcome-checked { font-weight: 700; color: var(--pink-deep); font-size: 0.9rem; flex-shrink: 0; }
+
+/* =========================================================
+   출석왕 랭킹 (홈)
+========================================================= */
+.attendance-rank-panel {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 28px;
+}
+
+.attendance-rank-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.attendance-rank-eyebrow { display: block; font-size: 0.68rem; font-weight: 800; color: var(--pink-deep); letter-spacing: 0.5px; margin-bottom: 4px; }
+.attendance-rank-title { margin: 0; font-size: 1.1rem; color: var(--brown-deep); }
+.attendance-rank-note { font-size: 0.78rem; color: var(--gray-text); flex-shrink: 0; }
+
+.attendance-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.attendance-rank-row:last-child { border-bottom: none; }
+
+.rank-badge-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--brown-deep);
+  flex-shrink: 0;
+}
+
+.rank-badge-circle.rank-1 { background: #F6C26B; }
+.rank-badge-circle.rank-2 { background: #D9D9D9; }
+.rank-badge-circle.rank-3 { background: #E3B08C; }
+
+.attendance-rank-name { flex: 1; font-weight: 700; font-size: 0.92rem; color: var(--brown-deep); }
+.attendance-rank-days { font-size: 0.82rem; color: var(--gray-text); }
+
+.medal-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.medal-pill.medal-1 { background: #F6C26B; color: var(--brown-deep); }
+.medal-pill.medal-2 { background: #E7E7E7; color: var(--brown-deep); }
+.medal-pill.medal-3 { background: #F0CBAE; color: var(--brown-deep); }
 
 /* =========================================================
    섹션 공통 타이틀
@@ -381,11 +499,37 @@ ul { list-style: none; margin: 0; padding: 0; }
 .tip-showcase-card h4 { margin: 0; font-size: 0.92rem; color: var(--brown-deep); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .tip-showcase-meta { font-size: 0.72rem; color: #c2ab9e; }
 
-.notice-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-.notice-showcase-card { background: var(--cream-soft); border: 1px dashed var(--pink); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-.badge-notice { display: inline-block; width: fit-content; background: var(--pink-deep); color: var(--white); font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-.notice-showcase-card h4 { margin: 0; font-size: 0.9rem; color: var(--brown-deep); }
-.notice-showcase-meta { font-size: 0.72rem; color: var(--gray-text); }
+.notice-preview-panel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #FCEBD2;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.notice-preview-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--brown-light);
+  flex-shrink: 0;
+}
+
+.notice-preview-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; flex: 1; }
+
+.notice-preview-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notice-preview-label { font-size: 0.68rem; font-weight: 800; color: var(--pink-deep); letter-spacing: 0.5px; }
+.notice-preview-card h4 { margin: 0; font-size: 0.9rem; color: var(--brown-deep); }
+.notice-preview-meta { font-size: 0.72rem; color: var(--gray-text); }
 
 /* =========================================================
    사진 (스크린샷)
@@ -554,7 +698,8 @@ ul { list-style: none; margin: 0; padding: 0; }
   .member-showcase-grid { grid-template-columns: repeat(2, 1fr); }
 
   .tips-row { grid-template-columns: 1fr; }
-  .notice-row { grid-template-columns: 1fr; }
+  .notice-preview-panel { flex-direction: column; align-items: stretch; }
+  .notice-preview-list { grid-template-columns: 1fr; }
   .screenshot-row { grid-template-columns: repeat(2, 1fr); }
 
   .tip-thumb-row { grid-template-columns: repeat(2, 1fr); }
@@ -562,3 +707,243 @@ ul { list-style: none; margin: 0; padding: 0; }
 
   .attendance-page-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   출석체크 모달
+========================================================= */
+.attendance-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(41, 26, 18, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.attendance-modal-overlay[hidden] { display: none; }
+
+.attendance-modal {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 30px 30px 26px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(74, 44, 29, 0.28);
+}
+
+.attendance-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  font-size: 1.05rem;
+  color: var(--gray-text);
+  line-height: 1;
+  padding: 6px;
+}
+
+.attendance-modal-eyebrow { display: block; font-size: 0.75rem; font-weight: 800; color: var(--pink-deep); letter-spacing: 0.5px; margin-bottom: 6px; }
+.attendance-modal-title { margin: 0 0 6px; font-size: 1.2rem; color: var(--brown-deep); padding-right: 24px; }
+.attendance-modal-sub { margin: 0 0 20px; font-size: 0.85rem; color: var(--gray-text); }
+
+.attendance-stamp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 14px 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 20px 12px;
+  margin-bottom: 22px;
+}
+
+.attendance-stamp-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.attendance-stamp-icon { width: 22px; height: auto; display: block; }
+.attendance-stamp-day { font-size: 0.72rem; font-weight: 700; color: var(--gray-text); }
+.attendance-stamp-cell.checked .attendance-stamp-day { color: var(--pink-deep); }
+.attendance-stamp-cell.is-today .attendance-stamp-icon { outline: 2px solid var(--pink); outline-offset: 2px; border-radius: 999px; }
+
+.attendance-modal-submit {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: var(--pink-deep);
+  color: var(--white);
+  padding: 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  transition: opacity 0.2s;
+}
+
+.attendance-modal-submit:hover { opacity: 0.9; }
+
+.attendance-modal-submit:disabled {
+  background:#F1ECE4;
+  color : #B7AFA2;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 480px) {
+  .attendance-stamp-grid { grid-template-columns: repeat(7, 1fr); gap: 10px 4px; padding: 16px 6px; }
+  .attendance-stamp-icon { width: 18px; }
+}
+
+/* =========================================================
+   이번 주 투표 (연주회 / 어비스)
+========================================================= */
+.weekly-vote-panel {
+  display: flex;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.weekly-vote-col { flex: 1; padding: 26px 28px; min-width: 0; }
+.weekly-vote-col + .weekly-vote-col { border-left: 1px solid var(--border-soft); }
+
+.weekly-vote-panel-single { justify-content: center; padding: 26px 28px; }
+
+.weekly-vote-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.weekly-vote-head h3 { margin: 0; font-size: 1rem; color: var(--brown-deep); }
+.weekly-vote-result-link { background: none; color: var(--pink-deep); font-size: 0.8rem; font-weight: 700; }
+
+.weekly-vote-sub { margin: 0 0 14px; font-size: 0.8rem; color: var(--gray-text); }
+
+.weekly-vote-days { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+.weekly-vote-day-btn {
+  background: var(--cream-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--brown-deep);
+  padding: 10px 0;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.weekly-vote-day-btn:hover { background: var(--pink-light); }
+.weekly-vote-day-btn.selected { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--white); }
+
+.weekly-vote-time-form[hidden] { display: none; }
+.weekly-vote-time-form { margin-top: 14px; }
+
+.weekly-vote-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.weekly-vote-times[hidden] { display: none; }
+
+.weekly-vote-time-btn {
+  background: var(--cream-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--brown-deep);
+  padding: 10px 0;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.weekly-vote-time-btn:hover { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--white); }
+
+.weekly-vote-done {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  color: var(--brown-deep);
+}
+
+.weekly-vote-done strong { font-size: 1rem; }
+.weekly-vote-done span { font-size: 0.9rem; color: var(--brown-deep); }
+
+.weekly-vote-login {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.weekly-vote-login-img { width: 52px; height: auto; }
+.weekly-vote-login p { margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--brown-deep); }
+
+.weekly-vote-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--pink-deep);
+  color: var(--white);
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.weekly-vote-login-btn:hover { background: var(--pink-strong); }
+
+@media (max-width: 860px) {
+  .weekly-vote-panel { flex-direction: column; }
+  .weekly-vote-col + .weekly-vote-col { border-left: none; border-top: 1px solid var(--border-soft); }
+}
+
+/* 이번 주 투표 결과보기 모달 */
+.vote-result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(41, 26, 18, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.vote-result-overlay[hidden] { display: none; }
+
+.vote-result-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 96vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(74, 44, 29, 0.28);
+  text-align: center;
+}
+
+.vote-result-title { margin: 0 0 4px; font-size: 1.1rem; color: var(--brown-deep); }
+.vote-result-sub { margin: 0 0 20px; font-size: 0.82rem; color: var(--gray-text); }
+
+.vote-result-list { display: flex; flex-direction: column; gap: 14px; text-align: left; margin-bottom: 22px; }
+
+.vote-result-row-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.88rem; font-weight: 700; color: var(--brown-deep); margin-bottom: 6px; }
+
+.vote-result-bar-track {
+  background: var(--pink-light);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.vote-result-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pink), var(--pink-deep));
+}
+
+.vote-result-breakdown { font-size: 0.72rem; color: var(--gray-text); }
+.vote-result-close-wrap { display: flex; justify-content: center; }

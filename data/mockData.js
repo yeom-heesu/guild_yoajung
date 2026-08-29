@@ -14,19 +14,17 @@
 const guildIntro = {
   title: "",
   description: "",
-  bannerImage: "/images/mainbanner.jpg",
+  bannerImage: "/images/mainbanner.png",
 };
 
 // TODO(API 연동): GET/POST/PATCH /api/members 로 교체
 const members = [
-  { id: 1, nickname: "초코라떼", job: "전사", level: 87, role: "길드장", joinDate: "2023-11-02", status: "온라인", avatar: "https://i.pravatar.cc/300?img=1", intro: "신입도 잡담 편하게 오세요" },
-  { id: 2, nickname: "자몽쿠키", job: "궁수", level: 82, role: "부길드장", joinDate: "2023-12-15", status: "온라인", avatar: "https://i.pravatar.cc/300?img=2", intro: "출근중이오니 메시지 남겨주세요" },
-  { id: 3, nickname: "솜사탕요정", job: "마법사", level: 79, role: "정예원", joinDate: "2024-01-20", status: "오프라인", avatar: "https://i.pravatar.cc/300?img=3", intro: "말레 여왕님과 함께해요" },
-  { id: 4, nickname: "딸기치즈타", job: "힐러", level: 75, role: "정예원", joinDate: "2024-02-11", status: "온라인", avatar: "https://i.pravatar.cc/300?img=4", intro: "아기 힐러 잘 부탁드려요" },
-  { id: 5, nickname: "딸기라떼", job: "도적", level: 70, role: "일반", joinDate: "2024-03-05", status: "오프라인", avatar: "https://i.pravatar.cc/300?img=5", intro: "일단은 만렙 갑니다" },
-  { id: 6, nickname: "우사기", job: "음유시인", level: 68, role: "일반", joinDate: "2024-04-18", status: "온라인", avatar: "https://i.pravatar.cc/300?img=6", intro: "이용약관 숙지완료" },
-  { id: 7, nickname: "밀크라떼", job: "전사", level: 64, role: "일반", joinDate: "2024-05-27", status: "오프라인", avatar: "https://i.pravatar.cc/300?img=7", intro: "느긋한 성장 좋아합니다" },
-  { id: 8, nickname: "레몬사이다", job: "궁수", level: 60, role: "신입", joinDate: "2024-06-30", status: "오프라인", avatar: "https://i.pravatar.cc/300?img=8", intro: "신입입니다! 잘 부탁드려요" },
+  { id: 1, nickname: "자몽톡톡", job: "대검전사", level: 100, role: "길드장", joinDate: "2023-11-02", status: "온라인", avatar: "/images/members/member_1.png", intro: "안녕하세요 톡톡입니다!" },
+  { id: 2, nickname: "망고빙수", job: "화염술사", level: 100, role: "부길드장", joinDate: "2023-12-15", status: "온라인", avatar: "/images/members/member_2.png", intro: "빙수에요" },
+  { id: 3, nickname: "오뜨야", job: "화염술사", level: 100, role: "부길드장", joinDate: "2024-01-20", status: "오프라인", avatar: "/images/members/member_3.png", intro: "오뜨야,오뜨르,오뜨모르" },
+  { id: 4, nickname: "사생", job: "수도사", level: 100, role: "길드원", joinDate: "2024-02-11", status: "온라인", avatar: "/images/members/member_4.png", intro: "잘 부탁드립니다. 사생입니다." },
+  { id: 5, nickname: "건마", job: "석궁사수", level: 100, role: "길드원", joinDate: "2024-03-05", status: "오프라인", avatar: "/images/members/member_5.png", intro: "건마" },
+
 ];
 
 // TODO(API 연동): GET/POST/PATCH/DELETE /api/notices 로 교체
@@ -58,12 +56,12 @@ const polls = [
     title: "9월 정기 연주회 날짜 투표",
     type: "연주회",
     description: "길드 정기 연주회 날짜를 골라주세요! 다수결로 확정됩니다.",
-    author: "우사기",
+    author: "자몽톡톡",
     date: "2026-08-25",
     deadline: "2026-08-29",
     options: [
-      { id: 1, label: "9/5(토) 오후 8시", votes: ["초코라떼", "딸기치즈타"] },
-      { id: 2, label: "9/6(일) 오후 3시", votes: ["자몽쿠키"] },
+      { id: 1, label: "9/5(토) 오후 8시", votes: ["망고빙수", "자몽톡톡"] },
+      { id: 2, label: "9/6(일) 오후 3시", votes: ["자몽톡톡"] },
       { id: 3, label: "9/12(토) 오후 8시", votes: [] },
     ],
   },
@@ -72,36 +70,68 @@ const polls = [
     title: "이번 주 어비스 진행 요일 투표",
     type: "어비스",
     description: "이번 주 어비스 같이 가실 분들, 편한 요일/시간 골라주세요.",
-    author: "초코라떼",
+    author: "망고빙수",
     date: "2026-08-24",
     deadline: "2026-08-28",
     options: [
-      { id: 1, label: "8/30(토) 저녁 9시", votes: ["자몽쿠키", "솜사탕요정", "딸기라떼"] },
-      { id: 2, label: "8/31(일) 오후 3시", votes: ["딸기치즈타"] },
-      { id: 3, label: "8/31(일) 저녁 9시", votes: ["밀크라떼", "레몬사이다"] },
+      { id: 1, label: "8/30(토) 저녁 9시", votes: ["자몽톡톡", "망고빙수", "건마"] },
+      { id: 2, label: "8/31(일) 오후 3시", votes: ["사생"] },
+      { id: 3, label: "8/31(일) 저녁 9시", votes: ["사생", "오뜨야"] },
     ],
   },
 ];
 
+// TODO(API 연동): GET/POST /api/weekly-vote 로 교체
+// weekKey: 그 주 월요일 날짜(YYYY-MM-DD). 서버에서 이번 주 월요일과 다르면 집계를 초기화합니다.
+// slotsByDay[요일][시간] = 투표한 닉네임 배열. 평일(월~금)은 20/21/22시, 주말(토·일)은 12/15/20시 슬롯만 사용합니다.
+const weeklyVote = {
+  weekKey: "2026-08-24",
+  concert: {
+    slotsByDay: {
+      mon: { 20: ["딸기치즈타"], 21: [], 22: [] },
+      tue: { 20: [], 21: ["레몬사이다"], 22: [] },
+      wed: { 20: [], 21: [], 22: [] },
+      thu: { 20: [], 21: [], 22: ["솜사탕요정"] },
+      fri: { 20: [], 21: [], 22: [] },
+      sat: { 12: [], 15: ["건마", "사생"], 20: [] },
+      sun: { 12: [], 15: [], 20: [] },
+    },
+  },
+  abyss: {
+    slotsByDay: {
+      mon: { 20: ["딸기치즈타", "우사기"], 21: ["레몬사이다", "밀크라떼"], 22: ["초코라떼"] },
+      tue: { 20: ["자몽쿠키"], 21: ["솜사탕요정"], 22: [] },
+      wed: { 20: [], 21: [], 22: [] },
+      thu: { 20: ["건마"], 21: ["사생", "우사기"], 22: ["딸기라떼"] },
+      fri: { 20: ["초코라떼", "레몬사이다"], 21: ["밀크라떼", "자몽쿠키", "솜사탕요정"], 22: ["딸기치즈타"] },
+      sat: { 12: ["건마"], 15: ["사생"], 20: [] },
+      sun: { 12: [], 15: [], 20: [] },
+    },
+  },
+};
+
 // TODO(API 연동): GET /api/attendance, POST /api/attendance 로 교체
+// checkedMonth: "YYYY-M" 형식. 서버에서 현재 월과 다르면 도장판을 초기화합니다.
 const attendance = {
+  checkedMonth: "2026-8",
+  checkedDays: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
   todayChecked: false,
   monthlyCount: 14,
   streak: 5,
   ranking: [
-    { rank: 1, nickname: "초코라떼", count: 24 },
-    { rank: 2, nickname: "자몽쿠키", count: 22 },
-    { rank: 3, nickname: "딸기치즈타", count: 20 },
-    { rank: 4, nickname: "솜사탕요정", count: 18 },
-    { rank: 5, nickname: "우사기", count: 16 },
+    { rank: 1, nickname: "자몽톡톡", count: 24 },
+    { rank: 2, nickname: "망고빙수", count: 22 },
+    { rank: 3, nickname: "사생", count: 20 },
+    { rank: 4, nickname: "건마", count: 18 },
+    { rank: 5, nickname: "오뜨야", count: 16 },
   ],
 };
 
 // TODO(API 연동): POST /api/auth/login 으로 교체
 const users = [
-  { id: 1, username: "admin", password: "1234", nickname: "자몽톡톡", avatar: "https://i.pravatar.cc/300?img=1", role: "마스터" },
-  { id: 2, username: "admin1", password: "1234", nickname: "망고빙수", avatar: "https://i.pravatar.cc/300?img=2", role: "부마스터" },
-  { id: 3, username: "admin2", password: "1234", nickname: "오뜨야", avatar: "https://i.pravatar.cc/300?img=4", role: "부마스터" },
+  { id: 1, username: "admin", password: "1234", nickname: "자몽톡톡", avatar: "/images/members/member_1.png", role: "마스터" },
+  { id: 2, username: "admin1", password: "1234", nickname: "망고빙수", avatar: "/images/members/member_2.png", role: "부마스터" },
+  { id: 3, username: "admin2", password: "1234", nickname: "오뜨야", avatar: "/images/members/member_3.png", role: "부마스터" },
 ];
 
-module.exports = { guildIntro, members, notices, tips, photos, polls, attendance, users };
+module.exports = { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance, users };
