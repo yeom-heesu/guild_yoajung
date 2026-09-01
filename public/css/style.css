@@ -129,6 +129,25 @@ ul { list-style: none; margin: 0; padding: 0; }
   flex-shrink: 0;
 }
 
+.topbar-auth { display: flex; align-items: center; gap: 12px; }
+
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  padding: 8px;
+}
+
+.mobile-menu-toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brown-deep);
+}
+
 .btn-join-inquiry {
   background: var(--brown-deep);
   color: var(--white);
@@ -222,8 +241,6 @@ ul { list-style: none; margin: 0; padding: 0; }
 
 .sidenav a:hover { background: var(--pink-light); }
 .sidenav a.active { background: var(--pink); color: var(--white); }
-
-.bottomnav { display: none; }
 
 /* =========================================================
    공통 카드 / 패널
@@ -669,24 +686,11 @@ ul { list-style: none; margin: 0; padding: 0; }
    반응형 (모바일)
 ========================================================= */
 @media (max-width: 860px) {
-  .layout { flex-direction: column; padding: 16px 14px 90px; }
+  .layout { flex-direction: column; padding: 16px 14px 24px; }
   .sidenav { display: none; }
 
-  .bottomnav {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--white);
-    box-shadow: 0 -4px 14px rgba(74, 44, 29, 0.1);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    z-index: 60;
-  }
-
-  .bottomnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; font-size: 0.64rem; color: var(--gray-text); border-radius: var(--radius-sm); }
-  .bottomnav a.active { color: var(--pink-deep); font-weight: 700; }
-  .bottomnav .nav-icon { font-size: 1.1rem; }
-
-  .topbar-user-name { display: none; }
+  .topbar-auth { display: none; }
+  .mobile-menu-toggle { display: flex; }
 
   .hero-section { flex-direction: column; padding: 26px; }
   .hero-right { width: 100%; }
@@ -947,3 +951,50 @@ ul { list-style: none; margin: 0; padding: 0; }
 
 .vote-result-breakdown { font-size: 0.72rem; color: var(--gray-text); }
 .vote-result-close-wrap { display: flex; justify-content: center; }
+
+/* =========================================================
+   모바일 메뉴 패널 (햄버거 버튼)
+========================================================= */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--cream-soft);
+  z-index: 150;
+  overflow-y: auto;
+}
+
+.mobile-menu-overlay[hidden] { display: none; }
+
+.mobile-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.mobile-menu-close {
+  background: none;
+  font-size: 1.1rem;
+  color: var(--brown-deep);
+  padding: 8px;
+}
+
+.mobile-menu-nav { display: flex; flex-direction: column; }
+
+.mobile-menu-nav a {
+  padding: 18px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown-deep);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.mobile-menu-nav a.active { background: var(--pink-light); color: var(--pink-deep); font-weight: 700; }
+
+.mobile-menu-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}

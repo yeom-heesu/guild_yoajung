@@ -26,10 +26,51 @@
         </nav>
 
         <div class="topbar-right">
-          <% if (!currentUser) { %>
-            <!-- TODO(기획 외 추가): 가입 문의 - 실제로는 디스코드 초대 링크나 신청 폼으로 교체 -->
-            <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
-          <% } %>
+          <div class="topbar-auth">
+            <% if (!currentUser) { %>
+              <!-- TODO(기획 외 추가): 가입 문의 - 실제로는 디스코드 초대 링크나 신청 폼으로 교체 -->
+              <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+            <% } %>
+            <% if (currentUser) { %>
+              <span class="topbar-user-name">
+                <img src="<%= currentUser.avatar %>" alt="" class="topbar-user-avatar" />
+                <%= currentUser.nickname %>님
+              </span>
+              <form action="/logout" method="POST" class="inline-form">
+                <button type="submit" class="btn-ghost-sm">로그아웃</button>
+              </form>
+            <% } else { %>
+              <a href="/login" class="btn-ghost-sm">로그인</a>
+            <% } %>
+          </div>
+
+          <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="메뉴 열기" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 모바일 전용 메뉴 패널 -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" hidden>
+      <div class="mobile-menu-panel">
+        <div class="mobile-menu-head">
+          <a href="/" class="brand">
+            <span class="brand-emblem"></span>
+            <span class="brand-text">요아정 길드</span>
+          </a>
+          <button type="button" class="mobile-menu-close" id="mobileMenuClose" aria-label="메뉴 닫기">✕</button>
+        </div>
+
+        <nav class="mobile-menu-nav">
+          <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">홈</a>
+          <a href="/#section-members" class="<%= currentPath.startsWith('/members') ? 'active' : '' %>">멤버소개</a>
+          <a href="/#section-notice" class="<%= currentPath.startsWith('/notice') ? 'active' : '' %>">공지사항</a>
+          <a href="/#section-tips" class="<%= currentPath.startsWith('/tips') ? 'active' : '' %>">팁 &amp; 공략</a>
+          <a href="/#section-photos" class="<%= currentPath.startsWith('/photos') ? 'active' : '' %>">스크린샷</a>
+        </nav>
+
+        <div class="mobile-menu-auth">
           <% if (currentUser) { %>
             <span class="topbar-user-name">
               <img src="<%= currentUser.avatar %>" alt="" class="topbar-user-avatar" />
@@ -40,7 +81,8 @@
             </form>
           <% } else { %>
             <a href="/login" class="btn-ghost-sm">로그인</a>
+            <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
           <% } %>
         </div>
       </div>
-    </header>
+    </div>

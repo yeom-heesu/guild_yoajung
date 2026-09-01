@@ -31,6 +31,33 @@ function toggleForm(formId) {
   });
 })();
 
+// 모바일 상단 햄버거 메뉴 열기/닫기
+(function initMobileMenu() {
+  const toggle = document.getElementById("mobileMenuToggle");
+  const overlay = document.getElementById("mobileMenuOverlay");
+  if (!toggle || !overlay) return;
+
+  const closeBtn = document.getElementById("mobileMenuClose");
+
+  function openMenu() {
+    overlay.hidden = false;
+    toggle.setAttribute("aria-expanded", "true");
+  }
+
+  function closeMenu() {
+    overlay.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  toggle.addEventListener("click", openMenu);
+  closeBtn.addEventListener("click", closeMenu);
+  overlay.querySelectorAll(".mobile-menu-nav a").forEach((a) => a.addEventListener("click", closeMenu));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) closeMenu();
+  });
+})();
+
 // 이번 주 투표 : 요일 선택 시 평일/주말에 맞는 시간대 버튼 노출
 (function initWeeklyVoteDays() {
   document.querySelectorAll("[data-vote-days]").forEach((daysWrap) => {
