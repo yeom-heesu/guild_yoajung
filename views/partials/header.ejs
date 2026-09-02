@@ -6,7 +6,7 @@
   <title>요아정 길드 | <%= typeof pageTitle !== "undefined" ? pageTitle : "홈" %></title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="<%= currentPath === '/' ? 'page-home' : '' %>">
+<body class="<%= currentPath === '/' ? 'page-home' : (currentPath === '/members' ? 'page-full-width' : '') %>">
   <div class="app">
     <!-- 상단 바 -->
     <header class="topbar">

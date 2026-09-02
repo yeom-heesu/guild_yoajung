@@ -4,8 +4,10 @@
   <%- include('partials/nav') %>
 
   <main class="content">
+    <a href="/" class="back-link">← 홈으로</a>
+
     <div class="page-head-row">
-      <h2 class="page-title">👥 길드원 리스트 (<%= members.length %>명)</h2>
+      <h2 class="page-title">자랑스런 요아정 멤버(<%= members.length %>명)</h2>
       <% if (currentUser) { %>
         <button type="button" class="btn-primary btn-sm" onclick="toggleForm('member-write-form')">새 멤버 등록</button>
       <% } %>
@@ -21,21 +23,18 @@
       </form>
     <% } %>
 
-    <section class="member-grid">
-      <% members.forEach(m => { %>
-        <a href="/members/<%= m.id %>" class="member-card">
-          <div class="member-avatar <%= m.status === '온라인' ? 'online' : '' %>" style="background-image:url('<%= m.avatar %>')"></div>
-          <div class="member-info">
-            <div class="member-name-row">
-              <span class="member-name"><%= m.nickname %></span>
-              <span class="member-role role-<%= m.role %>"><%= m.role %></span>
+    <section class="member-list">
+      <% members.forEach((m, i) => { %>
+        <a href="/members/<%= m.id %>" class="member-list-row">
+          <div class="member-list-avatar palette-<%= (i % 8) + 1 %>" style="background-image:url('<%= m.avatar %>')"></div>
+          <div class="member-list-info">
+            <span class="member-list-name"><%= m.nickname %></span>
+            <div class="member-list-badges">
+              <span class="member-badge member-badge-role"><%= m.role %></span>
+              <span class="member-badge member-badge-job"><%= m.job %></span>
             </div>
-            <span class="member-sub"><%= m.job %> · Lv.<%= m.level %></span>
-            <span class="member-sub-small">가입일 <%= m.joinDate %></span>
           </div>
-          <span class="member-status <%= m.status === '온라인' ? 'is-online' : 'is-offline' %>">
-            <%= m.status %>
-          </span>
+          <span class="member-list-intro"><%= m.intro %></span>
         </a>
       <% }) %>
     </section>

@@ -212,7 +212,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 /* 홈(랜딩) 페이지는 사이드바 숨기고 전체 폭 사용 */
-.page-home .sidenav { display: none; }
+.page-home .sidenav,
+.page-full-width .sidenav { display: none; }
 
 .sidenav {
   width: 200px;
@@ -644,19 +645,36 @@ ul { list-style: none; margin: 0; padding: 0; }
 /* =========================================================
    길드원 리스트
 ========================================================= */
-.member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
-.member-card { background: var(--white); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 20px; display: flex; align-items: center; gap: 14px; }
-.member-avatar { width: 60px; height: 60px; border-radius: 50%; background-color: var(--pink-light); background-size: cover; background-position: center; flex-shrink: 0; border: 2px solid transparent; }
-.member-avatar.online { border-color: #6fcf97; }
-.member-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.member-name-row { display: flex; align-items: center; gap: 6px; }
-.member-name { font-weight: 700; color: var(--brown-deep); font-size: 0.95rem; }
-.member-role { font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; background: var(--pink-light); color: var(--pink-deep); font-weight: 700; }
-.member-sub { font-size: 0.82rem; color: var(--gray-text); }
-.member-sub-small { font-size: 0.7rem; color: #c2ab9e; }
-.member-status { font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
-.member-status.is-online { color: #2fb463; }
-.member-status.is-offline { color: #c2ab9e; }
+.member-list { display: flex; flex-direction: column; gap: 12px; }
+
+.member-list-row {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.member-list-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.member-list-info { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; width: 190px; }
+.member-list-name { font-weight: 700; color: var(--brown-deep); font-size: 0.98rem; }
+.member-list-badges { display: flex; gap: 6px; }
+
+.member-badge { font-size: 0.7rem; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+.member-badge-role { background: var(--brown-deep); color: var(--white); }
+.member-badge-job { background: var(--pink-light); color: var(--pink-deep); }
+
+.member-list-intro { flex: 1; min-width: 0; font-size: 0.85rem; color: var(--gray-text); }
 
 /* =========================================================
    로그인 페이지
@@ -705,6 +723,10 @@ ul { list-style: none; margin: 0; padding: 0; }
   .notice-preview-panel { flex-direction: column; align-items: stretch; }
   .notice-preview-list { grid-template-columns: 1fr; }
   .screenshot-row { grid-template-columns: repeat(2, 1fr); }
+
+  .member-list-row { flex-wrap: wrap; }
+  .member-list-info { width: auto; }
+  .member-list-intro { width: 100%; flex-basis: 100%; }
 
   .tip-thumb-row { grid-template-columns: repeat(2, 1fr); }
   .photo-grid-4 { grid-template-columns: repeat(2, 1fr); }
