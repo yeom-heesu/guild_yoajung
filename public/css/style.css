@@ -131,6 +131,15 @@ ul { list-style: none; margin: 0; padding: 0; }
 
 .topbar-auth { display: flex; align-items: center; gap: 12px; }
 
+.topbar-mobile-avatar {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .mobile-menu-toggle {
   display: none;
   flex-direction: column;
@@ -211,37 +220,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   gap: 20px;
 }
 
-/* 홈(랜딩) 페이지는 사이드바 숨기고 전체 폭 사용 */
-.page-home .sidenav,
-.page-full-width .sidenav { display: none; }
-
-.sidenav {
-  width: 200px;
-  flex-shrink: 0;
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 16px 10px;
-  position: sticky;
-  top: 84px;
-}
-
-.sidenav ul { display: flex; flex-direction: column; gap: 4px; }
-
-.sidenav a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  color: var(--brown);
-  font-weight: 600;
-  font-size: 0.92rem;
-  transition: background 0.15s, color 0.15s;
-}
-
-.sidenav a:hover { background: var(--pink-light); }
-.sidenav a.active { background: var(--pink); color: var(--white); }
+.back-links { display: flex; gap: 16px; }
 
 /* =========================================================
    공통 카드 / 패널
@@ -705,9 +684,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 ========================================================= */
 @media (max-width: 860px) {
   .layout { flex-direction: column; padding: 16px 14px 24px; }
-  .sidenav { display: none; }
 
   .topbar-auth { display: none; }
+  .topbar-mobile-avatar { display: block; }
   .mobile-menu-toggle { display: flex; }
 
   .hero-section { flex-direction: column; padding: 26px; }
@@ -814,6 +793,37 @@ ul { list-style: none; margin: 0; padding: 0; }
   cursor: not-allowed;
   opacity: 1;
 }
+
+.welcome-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.attendance-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1ECE4;
+  color: var(--gray-text);
+  padding: 13px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.attendance-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  background: var(--pink-deep);
+  color: var(--white);
+  border: none;
+  padding: 13px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: opacity 0.2s;
+}
+
+.attendance-status-btn:hover { opacity: 0.9; }
 
 @media (max-width: 480px) {
   .attendance-stamp-grid { grid-template-columns: repeat(7, 1fr); gap: 10px 4px; padding: 16px 6px; }

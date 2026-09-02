@@ -4,7 +4,10 @@
   <%- include('partials/nav') %>
 
   <main class="content">
-    <a href="/polls" class="back-link">← 목록으로</a>
+    <div class="back-links">
+      <a href="/" class="back-link">← 홈으로</a>
+      <a href="/polls" class="back-link">← 목록으로</a>
+    </div>
 
     <% const totalVotes = poll.options.reduce((sum, o) => sum + o.votes.length, 0); %>
 

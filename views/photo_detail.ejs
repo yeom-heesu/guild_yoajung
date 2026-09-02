@@ -4,7 +4,10 @@
   <%- include('partials/nav') %>
 
   <main class="content">
-    <a href="/photos" class="back-link">← 목록으로</a>
+    <div class="back-links">
+      <a href="/" class="back-link">← 홈으로</a>
+      <a href="/photos" class="back-link">← 목록으로</a>
+    </div>
 
     <section class="panel detail-panel">
       <div class="detail-photo-full" style="background-image:url('<%= photo.imageUrl %>')"></div>

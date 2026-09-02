@@ -4,7 +4,10 @@
   <%- include('partials/nav') %>
 
   <main class="content">
-    <a href="/notice" class="back-link">← 목록으로</a>
+    <div class="back-links">
+      <a href="/" class="back-link">← 홈으로</a>
+      <a href="/notice" class="back-link">← 목록으로</a>
+    </div>
 
     <section class="panel detail-panel">
       <!-- TODO(API 연동): GET /api/notices/:id 결과로 교체 -->

@@ -6,7 +6,7 @@
   <title>요아정 길드 | <%= typeof pageTitle !== "undefined" ? pageTitle : "홈" %></title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="<%= currentPath === '/' ? 'page-home' : (currentPath === '/members' ? 'page-full-width' : '') %>">
+<body class="<%= currentPath === '/' ? 'page-home' : '' %>">
   <div class="app">
     <!-- 상단 바 -->
     <header class="topbar">
@@ -44,6 +44,10 @@
             <% } %>
           </div>
 
+          <% if (currentUser) { %>
+            <img src="<%= currentUser.avatar %>" alt="" class="topbar-mobile-avatar" />
+          <% } %>
+
           <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="메뉴 열기" aria-expanded="false">
             <span></span><span></span><span></span>
           </button>
@@ -70,19 +74,11 @@
           <a href="/#section-photos" class="<%= currentPath.startsWith('/photos') ? 'active' : '' %>">스크린샷</a>
         </nav>
 
-        <div class="mobile-menu-auth">
-          <% if (currentUser) { %>
-            <span class="topbar-user-name">
-              <img src="<%= currentUser.avatar %>" alt="" class="topbar-user-avatar" />
-              <%= currentUser.nickname %>님
-            </span>
-            <form action="/logout" method="POST" class="inline-form">
-              <button type="submit" class="btn-ghost-sm">로그아웃</button>
-            </form>
-          <% } else { %>
+        <% if (!currentUser) { %>
+          <div class="mobile-menu-auth">
             <a href="/login" class="btn-ghost-sm">로그인</a>
             <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
-          <% } %>
-        </div>
+          </div>
+        <% } %>
       </div>
     </div>

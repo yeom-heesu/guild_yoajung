@@ -31,13 +31,20 @@
           <h3><%= currentUser.nickname %>님! 어서오세요!</h3>
           <p>오늘도 요아정 길드와 함께 즐거운 하루 보내세요!</p>
         </div>
-          <button type="button" class="btn-primary" data-open-attendance-modal>
-            <picture>
-              <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
-              <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
-            </picture>
-            출석체크
-          </button>
+          <% if (attendance.todayChecked) { %>
+            <div class="welcome-actions">
+              <span class="attendance-complete-btn">✔ 출석완료!</span>
+              <button type="button" class="attendance-status-btn" data-open-attendance-modal>☎ 출석현황보기</button>
+            </div>
+          <% } else { %>
+            <button type="button" class="btn-primary" data-open-attendance-modal>
+              <picture>
+                <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
+                <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
+              </picture>
+              출석체크
+            </button>
+          <% } %>
       </section>
     <% } else { %>
       <section class="welcome-card">
@@ -51,7 +58,7 @@
               <source media="(max-width: 860px)" srcset="/images/stamp_mobile.png" />
               <img src="/images/stamp_pc.png" alt="" class="btn-attendance-icon" />
             </picture>
-          출석체크</a>
+          로그인</a>
       </section>
     <% } %>
 
