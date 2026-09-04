@@ -5,18 +5,80 @@
 
   <main class="content">
     <div class="back-links">
-      <a href="/" class="back-link">← 홈으로</a>
       <a href="/notice" class="back-link">← 목록으로</a>
     </div>
+
+    <%
+      const noticeCatColor = {
+        "공지": "#f7c9d8",
+        "알림": "#a9d4f0",
+        "이벤트": "#f5deA0",
+        "추첨결과": "#b7e4c7",
+      };
+    %>
 
     <section class="panel detail-panel">
       <!-- TODO(API 연동): GET /api/notices/:id 결과로 교체 -->
       <div class="detail-head">
-        <% if (notice.pinned) { %><span class="badge-pin">고정</span><% } %>
-        <h2 class="detail-title"><%= notice.title %></h2>
-        <span class="detail-meta"><%= notice.author %> · <%= notice.date %></span>
+        <span class="notice-list-badge" style="background-color:<%= noticeCatColor[notice.category] || noticeCatColor['공지'] %>"><%= notice.category %></span>
+
+        <div class="detail-title-row">
+          <h2 class="detail-title"><%= notice.title %></h2>
+          <% if (currentUser) { %>
+            <div class="detail-actions-inline">
+              <button type="button" class="btn-outline-sm" onclick="toggleForm('notice-edit-form')">수정</button>
+              <form method="POST" action="/notice/<%= notice.id %>/delete">
+                <button type="submit" class="btn-outline-sm">삭제</button>
+              </form>
+            </div>
+          <% } %>
+        </div>
+
+        <span class="detail-meta"><%= notice.author %> · <%= notice.date %> · 조회 <%= notice.views || 0 %></span>
       </div>
+
       <div class="detail-body"><%= notice.content %></div>
+
+      <% if (currentUser) { %>
+        <!-- TODO(API 연동): PATCH /api/notices/:id 로 교체 -->
+        <form action="/notice/<%= notice.id %>/edit" method="POST" id="notice-edit-form" class="write-form hidden">
+          <select name="category">
+            <option value="공지" <%= notice.category === '공지' ? 'selected' : '' %>>공지</option>
+            <option value="알림" <%= notice.category === '알림' ? 'selected' : '' %>>알림</option>
+            <option value="이벤트" <%= notice.category === '이벤트' ? 'selected' : '' %>>이벤트</option>
+            <option value="추첨결과" <%= notice.category === '추첨결과' ? 'selected' : '' %>>추첨결과</option>
+          </select>
+          <input type="text" name="title" value="<%= notice.title %>" required />
+          <textarea name="content" rows="4" required><%= notice.content %></textarea>
+          <button type="submit" class="btn-primary btn-sm">저장하기</button>
+        </form>
+      <% } %>
+    </section>
+
+    <section class="comments-section">
+      <h3 class="comments-title">댓글 <%= notice.comments.length %>개</h3>
+
+      <div class="comment-list">
+        <% notice.comments.forEach(c => { %>
+          <div class="comment-item">
+            <div class="comment-head">
+              <span class="comment-author"><%= c.author %></span>
+              <span class="comment-date"><%= c.date %></span>
+            </div>
+            <p class="comment-text"><%= c.content %></p>
+          </div>
+        <% }) %>
+      </div>
+
+      <% if (currentUser) { %>
+        <!-- TODO(API 연동): POST /api/notices/:id/comments 로 교체 -->
+        <form action="/notice/<%= notice.id %>/comments" method="POST" class="comment-form">
+          <input type="text" name="content" placeholder="댓글을 입력해주세요" required />
+          <button type="submit" class="btn-comment-submit">등록</button>
+        </form>
+      <% } else { %>
+        <p class="comment-login-hint">댓글을 작성하려면 <a href="/login">로그인</a>이 필요해요.</p>
+      <% } %>
     </section>
   </main>
 </div>

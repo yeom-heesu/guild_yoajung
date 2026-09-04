@@ -5,39 +5,80 @@
 
   <main class="content">
     <div class="back-links">
-      <a href="/" class="back-link">← 홈으로</a>
       <a href="/tips" class="back-link">← 목록으로</a>
     </div>
 
+    <%
+      const catColor = {
+        "직업공략": "#8fc7e8",
+        "생활팁": "#f29ca0",
+        "어비스": "#f6c26b",
+        "레이드": "#c9c2ea",
+        "악보공유": "#8ed1a6",
+      };
+    %>
+
     <section class="panel detail-panel">
       <div class="detail-head">
-        <span class="badge-cat"><%= tip.category %></span>
-        <h2 class="detail-title"><%= tip.title %></h2>
-        <span class="detail-meta"><%= tip.author %> · <%= tip.date %></span>
+        <span class="badge-cat-solid" style="background-color:<%= catColor[tip.category] || '#c9c2ea' %>"><%= tip.category %></span>
+
+        <div class="detail-title-row">
+          <h2 class="detail-title"><%= tip.title %></h2>
+          <% if (currentUser) { %>
+            <div class="detail-actions-inline">
+              <button type="button" class="btn-outline-sm" onclick="toggleForm('tip-edit-form')">수정</button>
+              <form method="POST" action="/tips/<%= tip.id %>/delete">
+                <button type="submit" class="btn-outline-sm">삭제</button>
+              </form>
+            </div>
+          <% } %>
+        </div>
+
+        <span class="detail-meta"><%= tip.author %> · <%= tip.date %> · 조회 <%= tip.views || 0 %></span>
       </div>
 
       <div class="detail-body"><%= tip.content %></div>
 
       <% if (currentUser) { %>
-        <div class="detail-actions">
-          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('tip-edit-form')">수정</button>
-          <form method="POST" action="/tips/<%= tip.id %>/delete">
-            <button type="submit" class="btn-danger btn-sm">삭제하기</button>
-          </form>
-        </div>
-
         <!-- TODO(API 연동): PATCH /api/tips/:id 로 교체 -->
         <form action="/tips/<%= tip.id %>/edit" method="POST" id="tip-edit-form" class="write-form hidden">
           <select name="category">
-            <option value="성장 공략" <%= tip.category === '성장 공략' ? 'selected' : '' %>>성장 공략</option>
-            <option value="장비/강화" <%= tip.category === '장비/강화' ? 'selected' : '' %>>장비/강화</option>
-            <option value="전투/PvP" <%= tip.category === '전투/PvP' ? 'selected' : '' %>>전투/PvP</option>
-            <option value="기타" <%= tip.category === '기타' ? 'selected' : '' %>>기타</option>
+            <option value="직업공략" <%= tip.category === '직업공략' ? 'selected' : '' %>>직업공략</option>
+            <option value="생활팁" <%= tip.category === '생활팁' ? 'selected' : '' %>>생활팁</option>
+            <option value="어비스" <%= tip.category === '어비스' ? 'selected' : '' %>>어비스</option>
+            <option value="레이드" <%= tip.category === '레이드' ? 'selected' : '' %>>레이드</option>
+            <option value="악보공유" <%= tip.category === '악보공유' ? 'selected' : '' %>>악보공유</option>
           </select>
           <input type="text" name="title" value="<%= tip.title %>" required />
           <textarea name="content" rows="4" required><%= tip.content %></textarea>
           <button type="submit" class="btn-primary btn-sm">저장하기</button>
         </form>
+      <% } %>
+    </section>
+
+    <section class="comments-section">
+      <h3 class="comments-title">댓글 <%= tip.comments.length %>개</h3>
+
+      <div class="comment-list">
+        <% tip.comments.forEach(c => { %>
+          <div class="comment-item">
+            <div class="comment-head">
+              <span class="comment-author"><%= c.author %></span>
+              <span class="comment-date"><%= c.date %></span>
+            </div>
+            <p class="comment-text"><%= c.content %></p>
+          </div>
+        <% }) %>
+      </div>
+
+      <% if (currentUser) { %>
+        <!-- TODO(API 연동): POST /api/tips/:id/comments 로 교체 -->
+        <form action="/tips/<%= tip.id %>/comments" method="POST" class="comment-form">
+          <input type="text" name="content" placeholder="댓글을 입력해주세요" required />
+          <button type="submit" class="btn-comment-submit">등록</button>
+        </form>
+      <% } else { %>
+        <p class="comment-login-hint">댓글을 작성하려면 <a href="/login">로그인</a>이 필요해요.</p>
       <% } %>
     </section>
   </main>

@@ -1,0 +1,72 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/members" class="back-link">← 이전으로</a>
+    <h2 class="page-title">멤버 등록</h2>
+
+    <%
+      const jobOptions = ["검술사", "대검전사", "화염술사", "빙결술사", "전격술사", "수도사", "석궁사수", "힐러"];
+      const roleOptions = ["길드장", "부길드장", "길드원"];
+    %>
+
+    <section class="panel member-new-panel">
+      <!-- TODO(API 연동): POST /api/members 로 교체 -->
+      <form action="/members" method="POST" id="member-new-form">
+        <label class="tip-write-label member-new-label-first">프로필 이미지</label>
+        <div class="member-avatar-dropzone" id="memberAvatarDropzone">
+          <input type="file" accept="image/*" id="memberAvatarInput" hidden />
+          <div class="member-avatar-dropzone-inner" id="memberAvatarInner">
+            <span class="member-avatar-dropzone-icon">+</span>
+            <span class="member-avatar-dropzone-text">이미지 등록</span>
+          </div>
+          <img class="member-avatar-preview" id="memberAvatarPreview" hidden />
+        </div>
+        <input type="hidden" name="avatar" id="memberAvatarValue" />
+
+        <label class="tip-write-label">아이디</label>
+        <input type="text" name="nickname" placeholder="캐릭터 닉네임을 입력해주세요" required />
+
+        <label class="tip-write-label">직급</label>
+        <div class="custom-select" id="memberRoleSelect">
+          <button type="button" class="custom-select-trigger" id="memberRoleTrigger">
+            <span id="memberRoleTriggerText">직급을 선택해주세요 (길드장 / 부길드장 / 길드원)</span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="memberRoleOptions" hidden>
+            <% roleOptions.forEach(r => { %>
+              <div class="custom-select-option" data-value="<%= r %>"><span><%= r %></span></div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="role" id="memberRoleValue" required />
+        </div>
+
+        <label class="tip-write-label">직업</label>
+        <div class="custom-select" id="memberJobSelect">
+          <button type="button" class="custom-select-trigger" id="memberJobTrigger">
+            <span id="memberJobTriggerText">직업을 선택해주세요</span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="memberJobOptions" hidden>
+            <% jobOptions.forEach(j => { %>
+              <div class="custom-select-option" data-value="<%= j %>"><span><%= j %></span></div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="job" id="memberJobValue" required />
+        </div>
+
+        <label class="tip-write-label">한줄 메시지</label>
+        <textarea name="intro" placeholder="길드원에게 하고 싶은 말을 남겨주세요 (최대 2줄)" rows="2" maxlength="60" required></textarea>
+
+        <div class="tip-write-actions">
+          <a href="/members" class="btn-outline">취소</a>
+          <button type="submit" class="btn-dark">등록</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<%- include('partials/footer') %>

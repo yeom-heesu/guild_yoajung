@@ -9,19 +9,9 @@
     <div class="page-head-row">
       <h2 class="page-title">자랑스런 요아정 멤버(<%= members.length %>명)</h2>
       <% if (currentUser) { %>
-        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('member-write-form')">새 멤버 등록</button>
+        <a href="/members/new" class="btn-dark btn-sm">새 멤버 등록</a>
       <% } %>
     </div>
-
-    <% if (currentUser) { %>
-      <!-- TODO(API 연동): POST /api/members 로 교체 -->
-      <form action="/members" method="POST" id="member-write-form" class="write-form hidden">
-        <input type="text" name="nickname" placeholder="닉네임(아이디)" required />
-        <input type="text" name="avatar" placeholder="캐릭터 스크린샷 이미지 URL" />
-        <input type="text" name="intro" placeholder="한줄 소개" required />
-        <button type="submit" class="btn-primary btn-sm">등록하기</button>
-      </form>
-    <% } %>
 
     <section class="member-list">
       <% members.forEach((m, i) => { %>

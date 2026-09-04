@@ -8,17 +8,74 @@
     <div class="page-head-row">
       <h2 class="page-title">📷 길드원 스크린샷</h2>
       <% if (currentUser) { %>
-        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('photo-write-form')">사진 등록</button>
+        <button type="button" class="btn-dark btn-sm" id="photoWriteOpen">사진 등록</button>
       <% } %>
     </div>
 
+    <%
+      const photoCatColor = {
+        "어비스/레이드": "#a9d4f0",
+        "연주회": "#f5dea0",
+        "생활": "#f7c9d8",
+        "협동": "#b7e4c7",
+        "사이드": "#c9c2ea",
+        "수다": "#f5c99e",
+      };
+      const photoCategories = Object.keys(photoCatColor);
+    %>
+
     <% if (currentUser) { %>
-      <!-- TODO(API 연동): POST /api/photos (multipart/form-data) 로 교체 -->
-      <form action="/photos" method="POST" id="photo-write-form" class="write-form hidden">
-        <input type="text" name="title" placeholder="사진 제목" required />
-        <input type="text" name="imageUrl" placeholder="이미지 URL (실제 구현 시 파일 업로드로 교체)" required />
-        <button type="submit" class="btn-primary btn-sm">등록하기</button>
-      </form>
+      <!-- TODO(API 연동): POST /api/photos (multipart/form-data, multer 등 사용) 로 교체 -->
+      <div class="tip-write-overlay" id="photoWriteOverlay" hidden>
+        <div class="tip-write-modal">
+          <div class="tip-write-head">
+            <h3>스크린샷 등록</h3>
+            <button type="button" class="tip-write-close" id="photoWriteClose" aria-label="닫기">✕</button>
+          </div>
+          <form action="/photos" method="POST" id="photo-write-form">
+            <label class="tip-write-label">이미지</label>
+            <div class="photo-dropzone" id="photoDropzone">
+              <input type="file" accept="image/*" id="photoFileInput" hidden />
+              <div class="photo-dropzone-inner" id="photoDropzoneInner">
+                <span class="photo-dropzone-icon">📷</span>
+                <span class="photo-dropzone-text">이미지를 선택하거나 끌어다 놓으세요</span>
+                <span class="photo-dropzone-hint">권장 비율 4:3 (예: 800×600px) · 최대 10MB</span>
+              </div>
+              <img class="photo-dropzone-preview" id="photoDropzonePreview" hidden />
+            </div>
+            <input type="hidden" name="imageUrl" id="photoImageUrlValue" required />
+
+            <label class="tip-write-label">항목 선택</label>
+            <div class="custom-select" id="photoCategorySelect">
+              <button type="button" class="custom-select-trigger" id="photoCategoryTrigger">
+                <span id="photoCategoryTriggerText">카테고리를 선택해주세요</span>
+                <span class="custom-select-arrow">⌄</span>
+              </button>
+              <div class="custom-select-options" id="photoCategoryOptions" hidden>
+                <% photoCategories.forEach(cat => { %>
+                  <div class="custom-select-option" data-value="<%= cat %>">
+                    <span class="notice-list-badge" style="background-color:<%= photoCatColor[cat] %>"><%= cat %></span>
+                    <span><%= cat %></span>
+                  </div>
+                <% }) %>
+              </div>
+              <input type="hidden" name="category" id="photoCategoryValue" required />
+            </div>
+
+            <label class="tip-write-label">제목</label>
+            <input type="text" name="title" placeholder="제목을 입력해주세요" required />
+
+            <label class="tip-write-label">설명 (선택)</label>
+            <textarea name="description" placeholder="스크린샷에 대한 짧은 설명을 남겨보세요" rows="4" maxlength="200" id="photoWriteDescription"></textarea>
+            <span class="tip-write-counter"><span id="photoWriteCount">0</span> / 200</span>
+
+            <div class="tip-write-actions">
+              <button type="button" class="btn-outline" id="photoWriteCancel">취소</button>
+              <button type="submit" class="btn-primary">등록</button>
+            </div>
+          </form>
+        </div>
+      </div>
     <% } %>
 
     <div class="photo-grid-4">

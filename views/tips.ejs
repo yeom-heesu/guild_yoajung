@@ -7,29 +7,79 @@
     <a href="/" class="back-link">← 홈으로</a>
     <div class="page-head-row">
       <h2 class="page-title">🍯 팁 &amp; 공략</h2>
-      <% if (currentUser) { %>
-        <button type="button" class="btn-primary btn-sm" onclick="toggleForm('tip-write-form')">글쓰기</button>
+      <% if (isAdmin) { %>
+        <button type="button" class="btn-dark btn-sm" id="tipWriteOpen">글쓰기</button>
       <% } %>
     </div>
 
-    <% if (currentUser) { %>
+    <%
+      const catColor = {
+        "직업공략": "#8fc7e8",
+        "생활팁": "#f29ca0",
+        "어비스": "#f6c26b",
+        "레이드": "#c9c2ea",
+        "악보공유": "#8ed1a6",
+      };
+      const writeCategories = Object.keys(catColor);
+      const tipCategories = [...new Set(tips.map(t => t.category))];
+    %>
+
+    <% if (isAdmin) { %>
       <!-- TODO(API 연동): POST /api/tips 로 교체 -->
-      <form action="/tips" method="POST" id="tip-write-form" class="write-form hidden">
-        <select name="category">
-          <option value="성장 공략">성장 공략</option>
-          <option value="장비/강화">장비/강화</option>
-          <option value="전투/PvP">전투/PvP</option>
-          <option value="기타">기타</option>
-        </select>
-        <input type="text" name="title" placeholder="제목" required />
-        <textarea name="content" placeholder="내용" rows="4" required></textarea>
-        <button type="submit" class="btn-primary btn-sm">등록하기</button>
-      </form>
+      <div class="tip-write-overlay" id="tipWriteOverlay" hidden>
+        <div class="tip-write-modal">
+          <div class="tip-write-head">
+            <h3>새 글쓰기</h3>
+            <button type="button" class="tip-write-close" id="tipWriteClose" aria-label="닫기">✕</button>
+          </div>
+          <form action="/tips" method="POST" id="tip-write-form">
+            <label class="tip-write-label">항목 선택</label>
+            <div class="custom-select" id="tipCategorySelect">
+              <button type="button" class="custom-select-trigger" id="tipCategoryTrigger">
+                <span id="tipCategoryTriggerText">카테고리를 선택해주세요</span>
+                <span class="custom-select-arrow">⌄</span>
+              </button>
+              <div class="custom-select-options" id="tipCategoryOptions" hidden>
+                <% writeCategories.forEach(cat => { %>
+                  <div class="custom-select-option" data-value="<%= cat %>">
+                    <span class="notice-list-badge" style="background-color:<%= catColor[cat] %>"><%= cat %></span>
+                    <span><%= cat %></span>
+                  </div>
+                <% }) %>
+              </div>
+              <input type="hidden" name="category" id="tipCategoryValue" required />
+            </div>
+
+            <label class="tip-write-label">제목</label>
+            <input type="text" name="title" placeholder="제목을 입력해주세요" required />
+
+            <label class="tip-write-label">내용</label>
+            <textarea name="content" placeholder="내용을 입력해주세요" rows="6" maxlength="3000" id="tipWriteContent" required></textarea>
+            <span class="tip-write-counter"><span id="tipWriteCount">0</span> / 3,000</span>
+
+            <div class="tip-write-actions">
+              <button type="button" class="btn-outline" id="tipWriteCancel">취소</button>
+              <button type="submit" class="btn-primary">등록</button>
+            </div>
+          </form>
+        </div>
+      </div>
     <% } %>
 
-    <div class="tip-thumb-row">
+    <div class="tip-filter-row" data-tip-filter>
+      <button type="button" class="tip-filter-btn active" data-filter="전체">전체</button>
+      <% tipCategories.forEach(cat => { %>
+        <button type="button" class="tip-filter-btn" data-filter="<%= cat %>"><%= cat %></button>
+      <% }) %>
+    </div>
+
+    <div class="tip-grid">
       <% tips.forEach(t => { %>
-        <%- include('partials/tip_thumb', { t }) %>
+        <a href="/tips/<%= t.id %>" class="tip-grid-card" data-category="<%= t.category %>">
+          <span class="badge-cat-solid" style="background-color:<%= catColor[t.category] || '#c9c2ea' %>"><%= t.category %></span>
+          <h4><%= t.title %></h4>
+          <span class="tip-grid-meta"><%= t.author %> · <%= t.date %></span>
+        </a>
       <% }) %>
     </div>
   </main>

@@ -13,8 +13,9 @@ const PORT = process.env.PORT || 3000;
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// limit: 스크린샷 등록 시 이미지를 base64로 인코딩해 전송하므로 넉넉하게 설정
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+app.use(express.json({ limit: "15mb" }));
 
 // TODO(API 연동): 실제 서비스에서는 세션 스토어를 Redis 등으로 교체하고,
 // secret 값은 .env / 환경변수(SESSION_SECRET)로 분리하세요.
@@ -31,6 +32,7 @@ app.use(
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   res.locals.currentPath = req.path;
+  res.locals.isAdmin = isAdmin(req.session.user);
   next();
 });
 
@@ -38,6 +40,19 @@ app.use((req, res, next) => {
 function requireLogin(req, res, next) {
   if (!req.session.user) {
     return res.redirect("/login");
+  }
+  next();
+}
+
+// 관리자(마스터/부마스터) 전용 가드 - 팁 & 공략 글쓰기에 사용
+const ADMIN_ROLES = ["마스터", "부마스터"];
+function isAdmin(user) {
+  return !!user && ADMIN_ROLES.includes(user.role);
+}
+
+function requireAdmin(req, res, next) {
+  if (!isAdmin(req.session.user)) {
+    return res.redirect("/tips");
   }
   next();
 }
@@ -234,7 +249,57 @@ app.get("/notice", (req, res) => {
 app.get("/notice/:id", (req, res) => {
   const notice = notices.find((n) => n.id === Number(req.params.id));
   if (!notice) return res.redirect("/notice");
+  notice.views = (notice.views || 0) + 1;
   res.render("notice_detail", { pageTitle: "공지사항", notice });
+});
+
+// TODO(API 연동): POST /api/notices 로 교체 - 등록은 관리자(마스터/부마스터)만 가능
+app.post("/notice", requireAdmin, (req, res) => {
+  const { title, category, content } = req.body;
+  notices.unshift({
+    id: notices.length ? Math.max(...notices.map((n) => n.id)) + 1 : 1,
+    title,
+    author: req.session.user.nickname,
+    date: new Date().toISOString().slice(0, 10),
+    pinned: false,
+    category: category || "공지",
+    content,
+    views: 0,
+    comments: [],
+  });
+  res.redirect("/notice");
+});
+
+app.post("/notice/:id/edit", requireLogin, (req, res) => {
+  // TODO(API 연동): PATCH /api/notices/:id 로 교체
+  const notice = notices.find((n) => n.id === Number(req.params.id));
+  if (notice) {
+    notice.title = req.body.title || notice.title;
+    notice.category = req.body.category || notice.category;
+    notice.content = req.body.content || notice.content;
+  }
+  res.redirect(`/notice/${req.params.id}`);
+});
+
+app.post("/notice/:id/delete", requireLogin, (req, res) => {
+  // TODO(API 연동): DELETE /api/notices/:id 로 교체
+  const idx = notices.findIndex((n) => n.id === Number(req.params.id));
+  if (idx !== -1) notices.splice(idx, 1);
+  res.redirect("/notice");
+});
+
+app.post("/notice/:id/comments", requireLogin, (req, res) => {
+  // TODO(API 연동): POST /api/notices/:id/comments 로 교체
+  const notice = notices.find((n) => n.id === Number(req.params.id));
+  if (notice && req.body.content && req.body.content.trim()) {
+    notice.comments.push({
+      id: notice.comments.length ? Math.max(...notice.comments.map((c) => c.id)) + 1 : 1,
+      author: req.session.user.nickname,
+      date: new Date().toISOString().slice(0, 10),
+      content: req.body.content.trim(),
+    });
+  }
+  res.redirect(`/notice/${req.params.id}`);
 });
 
 // ---------- 팁 & 공략 : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
@@ -245,21 +310,38 @@ app.get("/tips", (req, res) => {
 app.get("/tips/:id", (req, res) => {
   const tip = tips.find((t) => t.id === Number(req.params.id));
   if (!tip) return res.redirect("/tips");
+  tip.views = (tip.views || 0) + 1;
   res.render("tip_detail", { pageTitle: "팁 & 공략", tip });
 });
 
-app.post("/tips", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/tips 로 교체
+// TODO(API 연동): POST /api/tips 로 교체 - 글쓰기는 관리자(마스터/부마스터)만 가능
+app.post("/tips", requireAdmin, (req, res) => {
   const { title, category, content } = req.body;
   tips.unshift({
     id: tips.length ? Math.max(...tips.map((t) => t.id)) + 1 : 1,
     title,
     author: req.session.user.nickname,
     date: new Date().toISOString().slice(0, 10),
-    category: category || "기타",
+    category: category || "생활팁",
     content,
+    views: 0,
+    comments: [],
   });
   res.redirect("/tips");
+});
+
+app.post("/tips/:id/comments", requireLogin, (req, res) => {
+  // TODO(API 연동): POST /api/tips/:id/comments 로 교체
+  const tip = tips.find((t) => t.id === Number(req.params.id));
+  if (tip && req.body.content && req.body.content.trim()) {
+    tip.comments.push({
+      id: tip.comments.length ? Math.max(...tip.comments.map((c) => c.id)) + 1 : 1,
+      author: req.session.user.nickname,
+      date: new Date().toISOString().slice(0, 10),
+      content: req.body.content.trim(),
+    });
+  }
+  res.redirect(`/tips/${req.params.id}`);
 });
 
 app.post("/tips/:id/edit", requireLogin, (req, res) => {
@@ -288,18 +370,25 @@ app.get("/photos", (req, res) => {
 app.get("/photos/:id", (req, res) => {
   const photo = photos.find((p) => p.id === Number(req.params.id));
   if (!photo) return res.redirect("/photos");
-  res.render("photo_detail", { pageTitle: "길드원 스크린샷", photo });
+  photo.views = (photo.views || 0) + 1;
+  const liked = !!(req.session.user && photo.likedBy.includes(req.session.user.nickname));
+  res.render("photo_detail", { pageTitle: "길드원 스크린샷", photo, liked });
 });
 
 app.post("/photos", requireLogin, (req, res) => {
   // TODO(API 연동): POST /api/photos (multipart/form-data, multer 등 사용) 로 교체
-  const { title, imageUrl } = req.body;
+  const { title, category, description, imageUrl } = req.body;
   photos.unshift({
     id: photos.length ? Math.max(...photos.map((p) => p.id)) + 1 : 1,
     title,
     author: req.session.user.nickname,
     date: new Date().toISOString().slice(0, 10),
+    category: category || "생활",
+    content: description || "",
     imageUrl: imageUrl || "https://picsum.photos/seed/default/600/600",
+    views: 0,
+    likedBy: [],
+    comments: [],
   });
   res.redirect("/photos");
 });
@@ -319,6 +408,35 @@ app.post("/photos/:id/delete", requireLogin, (req, res) => {
   const idx = photos.findIndex((p) => p.id === Number(req.params.id));
   if (idx !== -1) photos.splice(idx, 1);
   res.redirect("/photos");
+});
+
+app.post("/photos/:id/like", requireLogin, (req, res) => {
+  // TODO(API 연동): POST /api/photos/:id/like 로 교체
+  const photo = photos.find((p) => p.id === Number(req.params.id));
+  if (photo) {
+    const nickname = req.session.user.nickname;
+    const idx = photo.likedBy.indexOf(nickname);
+    if (idx === -1) {
+      photo.likedBy.push(nickname);
+    } else {
+      photo.likedBy.splice(idx, 1);
+    }
+  }
+  res.redirect(`/photos/${req.params.id}`);
+});
+
+app.post("/photos/:id/comments", requireLogin, (req, res) => {
+  // TODO(API 연동): POST /api/photos/:id/comments 로 교체
+  const photo = photos.find((p) => p.id === Number(req.params.id));
+  if (photo && req.body.content && req.body.content.trim()) {
+    photo.comments.push({
+      id: photo.comments.length ? Math.max(...photo.comments.map((c) => c.id)) + 1 : 1,
+      author: req.session.user.nickname,
+      date: new Date().toISOString().slice(0, 10),
+      content: req.body.content.trim(),
+    });
+  }
+  res.redirect(`/photos/${req.params.id}`);
 });
 
 // ---------- 투표게시판 : 조회는 비회원도 가능, 투표/등록/삭제는 로그인 필요 ----------
@@ -387,6 +505,11 @@ app.get("/members", (req, res) => {
   res.render("members", { pageTitle: "멤버소개", members });
 });
 
+// 주의: '/members/:id'보다 먼저 등록해야 'new'가 id로 잘못 해석되지 않음
+app.get("/members/new", requireLogin, (req, res) => {
+  res.render("member_new", { pageTitle: "멤버 등록" });
+});
+
 app.get("/members/:id", (req, res) => {
   const member = members.find((m) => m.id === Number(req.params.id));
   if (!member) return res.redirect("/members");
@@ -395,15 +518,15 @@ app.get("/members/:id", (req, res) => {
 
 app.post("/members", requireLogin, (req, res) => {
   // TODO(API 연동): POST /api/members 로 교체
-  const { nickname, avatar, intro } = req.body;
+  const { nickname, avatar, role, job, intro } = req.body;
   members.unshift({
     id: members.length ? Math.max(...members.map((m) => m.id)) + 1 : 1,
     nickname,
-    job: "미정",
+    job: job || "미정",
     level: 1,
-    role: "신입",
+    role: role || "길드원",
     joinDate: new Date().toISOString().slice(0, 10),
-    status: "오프라인",
+    status: "온라인",
     avatar: avatar || "https://i.pravatar.cc/300?img=12",
     intro,
   });

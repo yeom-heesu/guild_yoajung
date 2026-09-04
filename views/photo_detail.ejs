@@ -5,32 +5,82 @@
 
   <main class="content">
     <div class="back-links">
-      <a href="/" class="back-link">← 홈으로</a>
       <a href="/photos" class="back-link">← 목록으로</a>
     </div>
 
+    <%
+      const photoCatColor = {
+        "어비스/레이드": "#a9d4f0",
+        "연주회": "#f5dea0",
+        "생활": "#f7c9d8",
+        "협동": "#b7e4c7",
+        "사이드": "#c9c2ea",
+        "수다": "#f5c99e",
+      };
+    %>
+
     <section class="panel detail-panel">
-      <div class="detail-photo-full" style="background-image:url('<%= photo.imageUrl %>')"></div>
-
       <div class="detail-head">
-        <h2 class="detail-title"><%= photo.title %></h2>
-        <span class="detail-meta"><%= photo.author %> · <%= photo.date %></span>
-      </div>
+        <span class="notice-list-badge" style="background-color:<%= photoCatColor[photo.category] || photoCatColor['생활'] %>"><%= photo.category %></span>
 
-      <% if (currentUser) { %>
-        <div class="detail-actions">
-          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('photo-edit-form')">수정</button>
-          <form method="POST" action="/photos/<%= photo.id %>/delete">
-            <button type="submit" class="btn-danger btn-sm">삭제하기</button>
-          </form>
+        <div class="detail-title-row">
+          <h2 class="detail-title"><%= photo.title %></h2>
+          <% if (currentUser) { %>
+            <div class="detail-actions-inline">
+              <button type="button" class="btn-outline-sm" onclick="toggleForm('photo-edit-form')">수정</button>
+              <form method="POST" action="/photos/<%= photo.id %>/delete">
+                <button type="submit" class="btn-outline-sm">삭제</button>
+              </form>
+            </div>
+          <% } %>
         </div>
 
+        <span class="detail-meta"><%= photo.author %> · <%= photo.date %> · 👁 <%= (photo.views || 0).toLocaleString() %> · ♥ <%= photo.likedBy.length %></span>
+      </div>
+
+      <div class="detail-photo-full" style="background-image:url('<%= photo.imageUrl %>')"></div>
+
+      <% if (currentUser) { %>
+        <form method="POST" action="/photos/<%= photo.id %>/like">
+          <button type="submit" class="photo-like-btn <%= liked ? 'liked' : '' %>">♥ 좋아요 <%= photo.likedBy.length %></button>
+        </form>
+      <% } else { %>
+        <span class="photo-like-btn liked-disabled">♥ 좋아요 <%= photo.likedBy.length %></span>
+      <% } %>
+
+      <% if (currentUser) { %>
         <!-- TODO(API 연동): PATCH /api/photos/:id 로 교체 -->
         <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form" class="write-form hidden">
           <input type="text" name="title" value="<%= photo.title %>" required />
           <input type="text" name="imageUrl" value="<%= photo.imageUrl %>" required />
           <button type="submit" class="btn-primary btn-sm">저장하기</button>
         </form>
+      <% } %>
+    </section>
+
+    <section class="comments-section">
+      <h3 class="comments-title">댓글 <%= photo.comments.length %>개</h3>
+
+      <div class="comment-list">
+        <% photo.comments.forEach(c => { %>
+          <div class="comment-item">
+            <div class="comment-head">
+              <span class="comment-author"><%= c.author %></span>
+              <span class="comment-date"><%= c.date %></span>
+            </div>
+            <p class="comment-text"><%= c.content %></p>
+          </div>
+        <% }) %>
+      </div>
+
+      <% if (currentUser) { %>
+        <!-- TODO(API 연동): POST /api/photos/:id/comments 로 교체 -->
+        <form action="/photos/<%= photo.id %>/comments" method="POST" class="comment-form">
+          <input type="text" name="content" placeholder="댓글을 입력해주세요" required />
+          <button type="submit" class="btn-comment-submit">등록</button>
+        </form>
+      <% } else { %>
+        <p class="comment-login-hint">댓글을 작성하려면 <a href="/login">로그인</a>이 필요해요.</p>
       <% } %>
     </section>
   </main>
