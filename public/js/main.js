@@ -82,15 +82,32 @@ function toggleForm(formId) {
     }
   });
 
+  const lengthAlertOverlay = document.getElementById("tipLengthAlertOverlay");
+  const lengthAlertConfirm = document.getElementById("tipLengthAlertConfirm");
+
   form.addEventListener("submit", (e) => {
+    if (textarea.value.length > 3000) {
+      e.preventDefault();
+      lengthAlertOverlay.hidden = false;
+      return;
+    }
     if (!categoryValue.value) {
       e.preventDefault();
       options.hidden = false;
     }
   });
 
+  lengthAlertConfirm.addEventListener("click", () => {
+    lengthAlertOverlay.hidden = true;
+  });
+
+  lengthAlertOverlay.addEventListener("click", (e) => {
+    if (e.target === lengthAlertOverlay) lengthAlertOverlay.hidden = true;
+  });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !overlay.hidden) close();
+    if (e.key === "Escape" && !lengthAlertOverlay.hidden) lengthAlertOverlay.hidden = true;
   });
 })();
 
@@ -224,8 +241,17 @@ function toggleForm(formId) {
     }
   });
 
+  const sizeAlertOverlay = document.getElementById("photoSizeAlertOverlay");
+  const sizeAlertConfirm = document.getElementById("photoSizeAlertConfirm");
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
   function loadFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      fileInput.value = "";
+      sizeAlertOverlay.hidden = false;
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       imageUrlValue.value = reader.result;
@@ -235,6 +261,14 @@ function toggleForm(formId) {
     };
     reader.readAsDataURL(file);
   }
+
+  sizeAlertConfirm.addEventListener("click", () => {
+    sizeAlertOverlay.hidden = true;
+  });
+
+  sizeAlertOverlay.addEventListener("click", (e) => {
+    if (e.target === sizeAlertOverlay) sizeAlertOverlay.hidden = true;
+  });
 
   dropzone.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => loadFile(fileInput.files[0]));
@@ -266,6 +300,113 @@ function toggleForm(formId) {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !overlay.hidden) close();
+    if (e.key === "Escape" && !sizeAlertOverlay.hidden) sizeAlertOverlay.hidden = true;
+  });
+})();
+
+// 글 수정 모달 열기/닫기 (스크린샷/팁/공지 공용)
+function initEditModal(openId, overlayId, closeId, cancelId) {
+  const overlay = document.getElementById(overlayId);
+  const openBtn = document.getElementById(openId);
+  if (!overlay || !openBtn) return;
+
+  const closeBtn = document.getElementById(closeId);
+  const cancelBtn = document.getElementById(cancelId);
+
+  function close() {
+    overlay.hidden = true;
+  }
+
+  openBtn.addEventListener("click", () => {
+    overlay.hidden = false;
+  });
+  closeBtn.addEventListener("click", close);
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) close();
+  });
+}
+
+initEditModal("photoEditOpen", "photoEditOverlay", "photoEditClose", "photoEditCancel");
+initEditModal("tipEditOpen", "tipEditOverlay", "tipEditClose", "tipEditCancel");
+initEditModal("noticeEditOpen", "noticeEditOverlay", "noticeEditClose", "noticeEditCancel");
+
+// 수정 폼 : 항목(카테고리) 커스텀 드롭다운 (스크린샷/팁/공지 공용)
+function initEditCategorySelect(prefix) {
+  const trigger = document.getElementById(prefix + "Trigger");
+  if (!trigger) return;
+
+  const triggerText = document.getElementById(prefix + "TriggerText");
+  const options = document.getElementById(prefix + "Options");
+  const value = document.getElementById(prefix + "Value");
+
+  trigger.addEventListener("click", () => {
+    options.hidden = !options.hidden;
+  });
+
+  options.querySelectorAll(".custom-select-option").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      value.value = opt.dataset.value;
+      triggerText.textContent = opt.dataset.value;
+      options.hidden = true;
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!options.hidden && !e.target.closest("#" + prefix + "Select")) {
+      options.hidden = true;
+    }
+  });
+}
+
+initEditCategorySelect("photoEditCategory");
+initEditCategorySelect("tipEditCategory");
+initEditCategorySelect("noticeEditCategory");
+
+// 수정 폼 글자수 카운터 (스크린샷/팁/공지 공용)
+function bindCharCounter(textareaId, counterId) {
+  const textarea = document.getElementById(textareaId);
+  const counter = document.getElementById(counterId);
+  if (!textarea || !counter) return;
+  textarea.addEventListener("input", () => {
+    counter.textContent = textarea.value.length;
+  });
+}
+
+bindCharCounter("tipEditContent", "tipEditCount");
+bindCharCounter("noticeEditContent", "noticeEditCount");
+bindCharCounter("photoEditContent", "photoEditCount");
+
+// 팁 & 공략 수정 : 3000자 초과 시 등록과 동일하게 경고 모달
+(function initTipEditLengthCheck() {
+  const form = document.getElementById("tip-edit-form");
+  const textarea = document.getElementById("tipEditContent");
+  const overlay = document.getElementById("tipEditLengthAlertOverlay");
+  if (!form || !overlay) return;
+
+  const confirmBtn = document.getElementById("tipEditLengthAlertConfirm");
+
+  form.addEventListener("submit", (e) => {
+    if (textarea.value.length > 3000) {
+      e.preventDefault();
+      overlay.hidden = false;
+    }
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    overlay.hidden = true;
+  });
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.hidden = true;
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) overlay.hidden = true;
   });
 })();
 
@@ -495,5 +636,39 @@ function toggleForm(formId) {
       if (!role.value.value) role.options.hidden = false;
       else job.options.hidden = false;
     }
+  });
+})();
+
+// 삭제 확인 모달 : [data-open-delete-confirm] 버튼이 속한 form을 확인 후 제출
+(function initDeleteConfirmModal() {
+  const overlay = document.getElementById("deleteConfirmOverlay");
+  if (!overlay) return;
+
+  const cancelBtn = document.getElementById("deleteConfirmCancel");
+  const submitBtn = document.getElementById("deleteConfirmSubmit");
+  let pendingForm = null;
+
+  function close() {
+    overlay.hidden = true;
+    pendingForm = null;
+  }
+
+  document.querySelectorAll("[data-open-delete-confirm]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pendingForm = btn.closest("form");
+      overlay.hidden = false;
+    });
+  });
+
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  submitBtn.addEventListener("click", () => {
+    if (pendingForm) pendingForm.submit();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) close();
   });
 })();

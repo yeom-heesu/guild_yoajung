@@ -27,9 +27,9 @@
           <h2 class="detail-title"><%= photo.title %></h2>
           <% if (currentUser) { %>
             <div class="detail-actions-inline">
-              <button type="button" class="btn-outline-sm" onclick="toggleForm('photo-edit-form')">수정</button>
+              <button type="button" class="btn-outline-sm" id="photoEditOpen">수정</button>
               <form method="POST" action="/photos/<%= photo.id %>/delete">
-                <button type="submit" class="btn-outline-sm">삭제</button>
+                <button type="button" class="btn-outline-sm" data-open-delete-confirm>삭제</button>
               </form>
             </div>
           <% } %>
@@ -40,6 +40,10 @@
 
       <div class="detail-photo-full" style="background-image:url('<%= photo.imageUrl %>')"></div>
 
+      <% if (photo.content) { %>
+        <p class="detail-body"><%= photo.content %></p>
+      <% } %>
+
       <% if (currentUser) { %>
         <form method="POST" action="/photos/<%= photo.id %>/like">
           <button type="submit" class="photo-like-btn <%= liked ? 'liked' : '' %>">♥ 좋아요 <%= photo.likedBy.length %></button>
@@ -48,14 +52,6 @@
         <span class="photo-like-btn liked-disabled">♥ 좋아요 <%= photo.likedBy.length %></span>
       <% } %>
 
-      <% if (currentUser) { %>
-        <!-- TODO(API 연동): PATCH /api/photos/:id 로 교체 -->
-        <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form" class="write-form hidden">
-          <input type="text" name="title" value="<%= photo.title %>" required />
-          <input type="text" name="imageUrl" value="<%= photo.imageUrl %>" required />
-          <button type="submit" class="btn-primary btn-sm">저장하기</button>
-        </form>
-      <% } %>
     </section>
 
     <section class="comments-section">
@@ -84,6 +80,66 @@
       <% } %>
     </section>
   </main>
+</div>
+
+<!-- 스크린샷 수정 모달 -->
+<% if (currentUser) { %>
+  <div class="tip-write-overlay" id="photoEditOverlay" hidden>
+    <div class="tip-write-modal">
+      <div class="tip-write-head">
+        <h3>스크린샷 수정</h3>
+        <button type="button" class="tip-write-close" id="photoEditClose" aria-label="닫기">✕</button>
+      </div>
+      <!-- TODO(API 연동): PATCH /api/photos/:id 로 교체 (이미지는 수정 불가, 제목/항목/설명만 수정) -->
+      <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form">
+        <label class="tip-write-label member-new-label-first">제목</label>
+        <input type="text" name="title" value="<%= photo.title %>" required />
+
+        <label class="tip-write-label">이미지</label>
+        <div class="photo-edit-image-preview" style="background-image:url('<%= photo.imageUrl %>')"></div>
+        <span class="photo-edit-image-note">이미지는 수정할 수 없어요.</span>
+
+        <label class="tip-write-label">항목</label>
+        <div class="custom-select" id="photoEditCategorySelect">
+          <button type="button" class="custom-select-trigger has-value" id="photoEditCategoryTrigger">
+            <span id="photoEditCategoryTriggerText"><%= photo.category %></span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="photoEditCategoryOptions" hidden>
+            <% Object.keys(photoCatColor).forEach(cat => { %>
+              <div class="custom-select-option" data-value="<%= cat %>">
+                <span class="notice-list-badge" style="background-color:<%= photoCatColor[cat] %>"><%= cat %></span>
+                <span><%= cat %></span>
+              </div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="category" id="photoEditCategoryValue" value="<%= photo.category %>" required />
+        </div>
+
+        <label class="tip-write-label">설명</label>
+        <textarea name="content" rows="4" maxlength="200" id="photoEditContent"><%= photo.content || '' %></textarea>
+        <span class="tip-write-counter"><span id="photoEditCount"><%= (photo.content || '').length %></span> / 200</span>
+
+        <div class="tip-write-actions">
+          <button type="button" class="btn-outline" id="photoEditCancel">취소</button>
+          <button type="submit" class="btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<!-- 삭제 확인 모달 -->
+<div class="confirm-delete-overlay" id="deleteConfirmOverlay" hidden>
+  <div class="confirm-delete-modal">
+    <img src="/images/golrem.png" alt="" class="confirm-delete-icon" />
+    <h3 class="confirm-delete-title">정말 삭제하시겠어요?</h3>
+    <p class="confirm-delete-sub">삭제한 글은 복구할 수 없어요.</p>
+    <div class="confirm-delete-actions">
+      <button type="button" class="confirm-delete-cancel" id="deleteConfirmCancel">취소</button>
+      <button type="button" class="confirm-delete-submit" id="deleteConfirmSubmit">삭제</button>
+    </div>
+  </div>
 </div>
 
 <%- include('partials/footer') %>

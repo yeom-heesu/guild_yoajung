@@ -76,6 +76,16 @@
           </form>
         </div>
       </div>
+
+      <!-- 이미지 용량 초과 알림 모달 -->
+      <div class="alert-modal-overlay" id="photoSizeAlertOverlay" hidden>
+        <div class="alert-modal">
+          <img src="/images/molly.png" alt="" class="alert-modal-icon" />
+          <h3 class="alert-modal-title">이미지 용량이 너무 커요!!</h3>
+          <p class="alert-modal-sub">10MB 이하 이미지로 다시 선택해주세요.</p>
+          <button type="button" class="alert-modal-confirm" id="photoSizeAlertConfirm">확인</button>
+        </div>
+      </div>
     <% } %>
 
     <div class="photo-grid-4">

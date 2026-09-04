@@ -26,9 +26,9 @@
           <h2 class="detail-title"><%= tip.title %></h2>
           <% if (currentUser) { %>
             <div class="detail-actions-inline">
-              <button type="button" class="btn-outline-sm" onclick="toggleForm('tip-edit-form')">수정</button>
+              <button type="button" class="btn-outline-sm" id="tipEditOpen">수정</button>
               <form method="POST" action="/tips/<%= tip.id %>/delete">
-                <button type="submit" class="btn-outline-sm">삭제</button>
+                <button type="button" class="btn-outline-sm" data-open-delete-confirm>삭제</button>
               </form>
             </div>
           <% } %>
@@ -39,21 +39,6 @@
 
       <div class="detail-body"><%= tip.content %></div>
 
-      <% if (currentUser) { %>
-        <!-- TODO(API 연동): PATCH /api/tips/:id 로 교체 -->
-        <form action="/tips/<%= tip.id %>/edit" method="POST" id="tip-edit-form" class="write-form hidden">
-          <select name="category">
-            <option value="직업공략" <%= tip.category === '직업공략' ? 'selected' : '' %>>직업공략</option>
-            <option value="생활팁" <%= tip.category === '생활팁' ? 'selected' : '' %>>생활팁</option>
-            <option value="어비스" <%= tip.category === '어비스' ? 'selected' : '' %>>어비스</option>
-            <option value="레이드" <%= tip.category === '레이드' ? 'selected' : '' %>>레이드</option>
-            <option value="악보공유" <%= tip.category === '악보공유' ? 'selected' : '' %>>악보공유</option>
-          </select>
-          <input type="text" name="title" value="<%= tip.title %>" required />
-          <textarea name="content" rows="4" required><%= tip.content %></textarea>
-          <button type="submit" class="btn-primary btn-sm">저장하기</button>
-        </form>
-      <% } %>
     </section>
 
     <section class="comments-section">
@@ -82,6 +67,72 @@
       <% } %>
     </section>
   </main>
+</div>
+
+<!-- 글 수정 모달 -->
+<% if (currentUser) { %>
+  <div class="tip-write-overlay" id="tipEditOverlay" hidden>
+    <div class="tip-write-modal">
+      <div class="tip-write-head">
+        <h3>글 수정</h3>
+        <button type="button" class="tip-write-close" id="tipEditClose" aria-label="닫기">✕</button>
+      </div>
+      <!-- TODO(API 연동): PATCH /api/tips/:id 로 교체 -->
+      <form action="/tips/<%= tip.id %>/edit" method="POST" id="tip-edit-form">
+        <label class="tip-write-label member-new-label-first">항목 선택</label>
+        <div class="custom-select" id="tipEditCategorySelect">
+          <button type="button" class="custom-select-trigger has-value" id="tipEditCategoryTrigger">
+            <span id="tipEditCategoryTriggerText"><%= tip.category %></span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="tipEditCategoryOptions" hidden>
+            <% Object.keys(catColor).forEach(cat => { %>
+              <div class="custom-select-option" data-value="<%= cat %>">
+                <span class="notice-list-badge" style="background-color:<%= catColor[cat] %>"><%= cat %></span>
+                <span><%= cat %></span>
+              </div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="category" id="tipEditCategoryValue" value="<%= tip.category %>" required />
+        </div>
+
+        <label class="tip-write-label">제목</label>
+        <input type="text" name="title" value="<%= tip.title %>" required />
+
+        <label class="tip-write-label">내용</label>
+        <textarea name="content" rows="6" id="tipEditContent" required><%= tip.content %></textarea>
+        <span class="tip-write-counter"><span id="tipEditCount"><%= tip.content.length %></span> / 3,000</span>
+
+        <div class="tip-write-actions">
+          <button type="button" class="btn-outline" id="tipEditCancel">취소</button>
+          <button type="submit" class="btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 글자수 초과 알림 모달 -->
+  <div class="alert-modal-overlay" id="tipEditLengthAlertOverlay" hidden>
+    <div class="alert-modal">
+      <img src="/images/stuate.png" alt="" class="alert-modal-icon" />
+      <h3 class="alert-modal-title">너무 많은 글을 적었어!!</h3>
+      <p class="alert-modal-sub">조금만 적게 써볼까?</p>
+      <button type="button" class="alert-modal-confirm" id="tipEditLengthAlertConfirm">확인</button>
+    </div>
+  </div>
+<% } %>
+
+<!-- 삭제 확인 모달 -->
+<div class="confirm-delete-overlay" id="deleteConfirmOverlay" hidden>
+  <div class="confirm-delete-modal">
+    <img src="/images/monster.png" alt="" class="confirm-delete-icon" />
+    <h3 class="confirm-delete-title">정말 삭제하시겠어요?</h3>
+    <p class="confirm-delete-sub">삭제한 글은 복구할 수 없어요.</p>
+    <div class="confirm-delete-actions">
+      <button type="button" class="confirm-delete-cancel" id="deleteConfirmCancel">취소</button>
+      <button type="button" class="confirm-delete-submit" id="deleteConfirmSubmit">삭제</button>
+    </div>
+  </div>
 </div>
 
 <%- include('partials/footer') %>

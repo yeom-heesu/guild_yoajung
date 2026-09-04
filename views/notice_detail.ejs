@@ -26,7 +26,7 @@
           <h2 class="detail-title"><%= notice.title %></h2>
           <% if (currentUser) { %>
             <div class="detail-actions-inline">
-              <button type="button" class="btn-outline-sm" onclick="toggleForm('notice-edit-form')">수정</button>
+              <button type="button" class="btn-outline-sm" id="noticeEditOpen">수정</button>
               <form method="POST" action="/notice/<%= notice.id %>/delete">
                 <button type="submit" class="btn-outline-sm">삭제</button>
               </form>
@@ -39,20 +39,6 @@
 
       <div class="detail-body"><%= notice.content %></div>
 
-      <% if (currentUser) { %>
-        <!-- TODO(API 연동): PATCH /api/notices/:id 로 교체 -->
-        <form action="/notice/<%= notice.id %>/edit" method="POST" id="notice-edit-form" class="write-form hidden">
-          <select name="category">
-            <option value="공지" <%= notice.category === '공지' ? 'selected' : '' %>>공지</option>
-            <option value="알림" <%= notice.category === '알림' ? 'selected' : '' %>>알림</option>
-            <option value="이벤트" <%= notice.category === '이벤트' ? 'selected' : '' %>>이벤트</option>
-            <option value="추첨결과" <%= notice.category === '추첨결과' ? 'selected' : '' %>>추첨결과</option>
-          </select>
-          <input type="text" name="title" value="<%= notice.title %>" required />
-          <textarea name="content" rows="4" required><%= notice.content %></textarea>
-          <button type="submit" class="btn-primary btn-sm">저장하기</button>
-        </form>
-      <% } %>
     </section>
 
     <section class="comments-section">
@@ -82,5 +68,48 @@
     </section>
   </main>
 </div>
+
+<!-- 글 수정 모달 -->
+<% if (currentUser) { %>
+  <div class="tip-write-overlay" id="noticeEditOverlay" hidden>
+    <div class="tip-write-modal">
+      <div class="tip-write-head">
+        <h3>글 수정</h3>
+        <button type="button" class="tip-write-close" id="noticeEditClose" aria-label="닫기">✕</button>
+      </div>
+      <!-- TODO(API 연동): PATCH /api/notices/:id 로 교체 -->
+      <form action="/notice/<%= notice.id %>/edit" method="POST" id="notice-edit-form">
+        <label class="tip-write-label member-new-label-first">항목 선택</label>
+        <div class="custom-select" id="noticeEditCategorySelect">
+          <button type="button" class="custom-select-trigger has-value" id="noticeEditCategoryTrigger">
+            <span id="noticeEditCategoryTriggerText"><%= notice.category %></span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="noticeEditCategoryOptions" hidden>
+            <% Object.keys(noticeCatColor).forEach(cat => { %>
+              <div class="custom-select-option" data-value="<%= cat %>">
+                <span class="notice-list-badge" style="background-color:<%= noticeCatColor[cat] %>"><%= cat %></span>
+                <span><%= cat %></span>
+              </div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="category" id="noticeEditCategoryValue" value="<%= notice.category %>" required />
+        </div>
+
+        <label class="tip-write-label">제목</label>
+        <input type="text" name="title" value="<%= notice.title %>" required />
+
+        <label class="tip-write-label">내용</label>
+        <textarea name="content" rows="6" maxlength="3000" id="noticeEditContent" required><%= notice.content %></textarea>
+        <span class="tip-write-counter"><span id="noticeEditCount"><%= notice.content.length %></span> / 3,000</span>
+
+        <div class="tip-write-actions">
+          <button type="button" class="btn-outline" id="noticeEditCancel">취소</button>
+          <button type="submit" class="btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% } %>
 
 <%- include('partials/footer') %>

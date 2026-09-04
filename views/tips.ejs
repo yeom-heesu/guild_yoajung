@@ -54,7 +54,7 @@
             <input type="text" name="title" placeholder="제목을 입력해주세요" required />
 
             <label class="tip-write-label">내용</label>
-            <textarea name="content" placeholder="내용을 입력해주세요" rows="6" maxlength="3000" id="tipWriteContent" required></textarea>
+            <textarea name="content" placeholder="내용을 입력해주세요" rows="6" id="tipWriteContent" required></textarea>
             <span class="tip-write-counter"><span id="tipWriteCount">0</span> / 3,000</span>
 
             <div class="tip-write-actions">
@@ -62,6 +62,16 @@
               <button type="submit" class="btn-primary">등록</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- 글자수 초과 알림 모달 -->
+      <div class="alert-modal-overlay" id="tipLengthAlertOverlay" hidden>
+        <div class="alert-modal">
+          <img src="/images/stuate.png" alt="" class="alert-modal-icon" />
+          <h3 class="alert-modal-title">너무 많은 글을 적었어!!</h3>
+          <p class="alert-modal-sub">조금만 적게 써볼까?</p>
+          <button type="button" class="alert-modal-confirm" id="tipLengthAlertConfirm">확인</button>
         </div>
       </div>
     <% } %>

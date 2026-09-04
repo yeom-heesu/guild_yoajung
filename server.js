@@ -394,11 +394,12 @@ app.post("/photos", requireLogin, (req, res) => {
 });
 
 app.post("/photos/:id/edit", requireLogin, (req, res) => {
-  // TODO(API 연동): PATCH /api/photos/:id 로 교체
+  // TODO(API 연동): PATCH /api/photos/:id 로 교체 (이미지는 수정 대상에서 제외, 제목/항목/내용만 반영)
   const photo = photos.find((p) => p.id === Number(req.params.id));
   if (photo) {
     photo.title = req.body.title || photo.title;
-    photo.imageUrl = req.body.imageUrl || photo.imageUrl;
+    photo.category = req.body.category || photo.category;
+    photo.content = req.body.content || "";
   }
   res.redirect(`/photos/${req.params.id}`);
 });

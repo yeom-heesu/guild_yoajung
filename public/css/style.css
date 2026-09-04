@@ -759,6 +759,19 @@ ul { list-style: none; margin: 0; padding: 0; }
 .photo-like-btn:hover { background: var(--pink-light); }
 .photo-like-btn.liked { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--white); }
 .photo-like-btn.liked-disabled { cursor: default; }
+
+.photo-edit-image-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background-size: cover;
+  background-position: center;
+  background-color: var(--pink-light);
+  border: 1px solid var(--border-soft);
+  opacity: 0.85;
+}
+
+.photo-edit-image-note { font-size: 0.72rem; color: var(--gray-text); margin-top: -2px; }
 .member-detail-avatar { width: 120px; height: 120px; border-radius: 50%; background-size: cover; background-position: center; background-color: var(--pink-light); border: 3px solid var(--pink); margin: 0 auto 16px; }
 
 /* =========================================================
@@ -802,7 +815,10 @@ ul { list-style: none; margin: 0; padding: 0; }
 #tip-write-form,
 #notice-write-form,
 #photo-write-form,
-#member-new-form { display: flex; flex-direction: column; gap: 6px; }
+#member-new-form,
+#photo-edit-form,
+#tip-edit-form,
+#notice-edit-form { display: flex; flex-direction: column; gap: 6px; }
 
 .tip-write-label { font-size: 0.8rem; font-weight: 700; color: var(--brown-deep); margin-top: 10px; }
 .tip-write-label:first-of-type,
@@ -816,7 +832,13 @@ ul { list-style: none; margin: 0; padding: 0; }
 #photo-write-form input[type="text"],
 #photo-write-form textarea,
 #member-new-form input[type="text"],
-#member-new-form textarea {
+#member-new-form textarea,
+#photo-edit-form input[type="text"],
+#photo-edit-form textarea,
+#tip-edit-form input[type="text"],
+#tip-edit-form textarea,
+#notice-edit-form input[type="text"],
+#notice-edit-form textarea {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
@@ -835,7 +857,13 @@ ul { list-style: none; margin: 0; padding: 0; }
 #photo-write-form input[type="text"]:focus,
 #photo-write-form textarea:focus,
 #member-new-form input[type="text"]:focus,
-#member-new-form textarea:focus { outline: none; border-color: var(--pink-strong); }
+#member-new-form textarea:focus,
+#photo-edit-form input[type="text"]:focus,
+#photo-edit-form textarea:focus,
+#tip-edit-form input[type="text"]:focus,
+#tip-edit-form textarea:focus,
+#notice-edit-form input[type="text"]:focus,
+#notice-edit-form textarea:focus { outline: none; border-color: var(--pink-strong); }
 
 .tip-write-counter { align-self: flex-end; font-size: 0.72rem; color: var(--gray-text); margin-top: 4px; }
 
@@ -1381,3 +1409,108 @@ ul { list-style: none; margin: 0; padding: 0; }
   gap: 12px;
   padding: 20px;
 }
+
+/* =========================================================
+   삭제 확인 모달
+========================================================= */
+.confirm-delete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(41, 26, 18, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.confirm-delete-overlay[hidden] { display: none; }
+
+.confirm-delete-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(74, 44, 29, 0.28);
+}
+
+.confirm-delete-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 14px;
+  display: block;
+}
+
+.confirm-delete-title { margin: 0 0 6px; font-size: 1.05rem; color: var(--brown-deep); }
+.confirm-delete-sub { margin: 0 0 20px; font-size: 0.82rem; color: var(--gray-text); }
+
+.confirm-delete-actions { display: flex; gap: 10px; }
+
+.confirm-delete-cancel,
+.confirm-delete-submit {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.confirm-delete-cancel { background: var(--cream-soft); color: var(--brown-deep); }
+.confirm-delete-cancel:hover { background: var(--border-soft); }
+
+.confirm-delete-submit { background: #d9695f; color: var(--white); }
+.confirm-delete-submit:hover { background: #c65b52; }
+
+/* =========================================================
+   알림(경고) 모달 - 예: 글자수 초과
+========================================================= */
+.alert-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(41, 26, 18, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 210;
+}
+
+.alert-modal-overlay[hidden] { display: none; }
+
+.alert-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(74, 44, 29, 0.28);
+}
+
+.alert-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 14px;
+  display: block;
+}
+
+.alert-modal-title { margin: 0 0 6px; font-size: 1.05rem; color: var(--brown-deep); }
+.alert-modal-sub { margin: 0 0 20px; font-size: 0.82rem; color: var(--gray-text); }
+
+.alert-modal-confirm {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: #d9695f;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.alert-modal-confirm:hover { background: #c65b52; }
