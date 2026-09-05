@@ -1,0 +1,125 @@
+<%- include('partials/header') %>
+
+<div class="layout">
+  <%- include('partials/nav') %>
+
+  <main class="content">
+    <a href="/" class="back-link">← 홈으로</a>
+    <h2 class="page-title">사용자 계정 등록</h2>
+
+    <% if (result) { %>
+      <div class="admin-user-result <%= result.success ? 'is-success' : 'is-error' %>">
+        <%= result.message %>
+      </div>
+    <% } %>
+
+    <section class="admin-user-list-section">
+      <h3 class="comments-title">등록된 사용자 (<%= userList.length %>명)</h3>
+
+      <% if (userListError) { %>
+        <p class="comment-login-hint"><%= userListError %></p>
+      <% } else if (!userList.length) { %>
+        <p class="comment-login-hint">등록된 사용자가 없습니다.</p>
+      <% } else { %>
+        <div class="notice-list">
+          <% userList.forEach(u => { %>
+            <div class="notice-list-row">
+              <span class="notice-list-badge user-type-<%= u.userType === 'ADMIN' ? 'admin' : 'user' %>"><%= u.userType %></span>
+              <span class="notice-list-title"><%= u.userNm %> (<%= u.userId %>)</span>
+              <span class="notice-list-meta"><%= u.stopYn === 'Y' ? '정지' : '정상' %> · <%= u.regDt ? u.regDt.slice(0, 10) : '-' %> 가입</span>
+              <button
+                type="button"
+                class="btn-outline-sm"
+                data-edit-user
+                data-user-idx="<%= u.userIdx %>"
+                data-user-id="<%= u.userId %>"
+                data-user-nm="<%= u.userNm %>"
+                data-user-type="<%= u.userType %>"
+                data-user-phone="<%= u.userPhone || '' %>"
+                data-user-email="<%= u.userEmail || '' %>"
+                data-user-memo="<%= u.userMemo || '' %>"
+              >수정</button>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="panel member-new-panel">
+      <!-- TODO(API 연동): POST http://painvegas53.iptime.org:8026/v1Api/addUser 호출 -->
+      <form action="/admin/users" method="POST" id="admin-user-form" class="form-stack">
+        <label class="tip-write-label member-new-label-first">아이디</label>
+        <input type="text" name="userId" placeholder="로그인에 사용할 아이디를 입력해주세요" value="<%= form.userId %>" required />
+
+        <label class="tip-write-label">비밀번호</label>
+        <input type="password" name="userPw" placeholder="비밀번호를 입력해주세요" required />
+
+        <label class="tip-write-label">이름</label>
+        <input type="text" name="userNm" placeholder="사용자 이름을 입력해주세요" value="<%= form.userNm %>" required />
+
+        <label class="tip-write-label">권한</label>
+        <select name="userType" required>
+          <option value="ADMIN" <%= form.userType === 'ADMIN' ? 'selected' : '' %>>관리자 (ADMIN)</option>
+          <option value="USER" <%= form.userType === 'USER' ? 'selected' : '' %>>일반 사용자 (USER)</option>
+        </select>
+
+        <label class="tip-write-label">전화번호 (선택)</label>
+        <input type="text" name="userPhone" placeholder="010-0000-0000" value="<%= form.userPhone %>" />
+
+        <label class="tip-write-label">이메일 (선택)</label>
+        <input type="text" name="userEmail" placeholder="example@guild.com" value="<%= form.userEmail %>" />
+
+        <label class="tip-write-label">메모 (선택)</label>
+        <textarea name="userMemo" rows="3" placeholder="필요한 메모를 남겨주세요"><%= form.userMemo %></textarea>
+
+        <div class="tip-write-actions">
+          <a href="/" class="btn-outline">취소</a>
+          <button type="submit" class="btn-primary">등록</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<!-- 사용자 수정 모달 -->
+<div class="tip-write-overlay" id="userEditOverlay" hidden>
+  <div class="tip-write-modal">
+    <div class="tip-write-head">
+      <h3>사용자 수정</h3>
+      <button type="button" class="tip-write-close" id="userEditClose" aria-label="닫기">✕</button>
+    </div>
+    <!-- TODO(API 연동): POST http://painvegas53.iptime.org:8026/v1Api/upUser 호출 -->
+    <form method="POST" id="user-edit-form" class="form-stack">
+      <label class="tip-write-label member-new-label-first">아이디</label>
+      <input type="text" name="userId" id="userEditId" required />
+
+      <label class="tip-write-label">이름</label>
+      <input type="text" name="userNm" id="userEditNm" required />
+
+      <label class="tip-write-label">비밀번호 (선택)</label>
+      <input type="password" name="userPw" placeholder="변경하지 않으려면 비워두세요" />
+
+      <label class="tip-write-label">권한</label>
+      <select name="userType" id="userEditType">
+        <option value="ADMIN">관리자 (ADMIN)</option>
+        <option value="USER">일반 사용자 (USER)</option>
+      </select>
+
+      <label class="tip-write-label">전화번호 (선택)</label>
+      <input type="text" name="userPhone" id="userEditPhone" placeholder="010-0000-0000" />
+
+      <label class="tip-write-label">이메일 (선택)</label>
+      <input type="text" name="userEmail" id="userEditEmail" placeholder="example@guild.com" />
+
+      <label class="tip-write-label">메모 (선택)</label>
+      <textarea name="userMemo" id="userEditMemo" rows="3" placeholder="필요한 메모를 남겨주세요"></textarea>
+
+      <div class="tip-write-actions">
+        <button type="button" class="btn-outline" id="userEditCancel">취소</button>
+        <button type="submit" class="btn-primary">저장하기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

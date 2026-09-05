@@ -91,7 +91,7 @@
         <button type="button" class="tip-write-close" id="photoEditClose" aria-label="닫기">✕</button>
       </div>
       <!-- TODO(API 연동): PATCH /api/photos/:id 로 교체 (이미지는 수정 불가, 제목/항목/설명만 수정) -->
-      <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form">
+      <form action="/photos/<%= photo.id %>/edit" method="POST" id="photo-edit-form" class="form-stack">
         <label class="tip-write-label member-new-label-first">제목</label>
         <input type="text" name="title" value="<%= photo.title %>" required />
 

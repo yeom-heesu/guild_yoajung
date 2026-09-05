@@ -78,7 +78,7 @@
         <button type="button" class="tip-write-close" id="noticeEditClose" aria-label="닫기">✕</button>
       </div>
       <!-- TODO(API 연동): PATCH /api/notices/:id 로 교체 -->
-      <form action="/notice/<%= notice.id %>/edit" method="POST" id="notice-edit-form">
+      <form action="/notice/<%= notice.id %>/edit" method="POST" id="notice-edit-form" class="form-stack">
         <label class="tip-write-label member-new-label-first">항목 선택</label>
         <div class="custom-select" id="noticeEditCategorySelect">
           <button type="button" class="custom-select-trigger has-value" id="noticeEditCategoryTrigger">

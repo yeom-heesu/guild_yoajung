@@ -36,6 +36,9 @@
                 <img src="<%= currentUser.avatar %>" alt="" class="topbar-user-avatar" />
                 <%= currentUser.nickname %>님
               </span>
+              <% if (isAdmin) { %>
+                <a href="/admin/users/new" class="btn-ghost-sm">사용자 등록</a>
+              <% } %>
               <form action="/logout" method="POST" class="inline-form">
                 <button type="submit" class="btn-ghost-sm">로그아웃</button>
               </form>
@@ -78,6 +81,10 @@
           <div class="mobile-menu-auth">
             <a href="/login" class="btn-ghost-sm">로그인</a>
             <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+          </div>
+        <% } else if (isAdmin) { %>
+          <div class="mobile-menu-auth">
+            <a href="/admin/users/new" class="btn-ghost-sm">사용자 등록</a>
           </div>
         <% } %>
       </div>

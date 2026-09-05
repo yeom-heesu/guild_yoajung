@@ -270,11 +270,6 @@ const attendance = {
   ],
 };
 
-// TODO(API 연동): POST /api/auth/login 으로 교체
-const users = [
-  { id: 1, username: "admin", password: "1234", nickname: "자몽톡톡", avatar: "/images/members/member_1.png", role: "마스터" },
-  { id: 2, username: "admin1", password: "1234", nickname: "망고빙수", avatar: "/images/members/member_2.png", role: "부마스터" },
-  { id: 3, username: "admin2", password: "1234", nickname: "오뜨야", avatar: "/images/members/member_3.png", role: "부마스터" },
-];
+// 로그인은 목업이 아닌 실제 계정 API(POST /v1Api/loginUser)를 사용합니다. server.js 참고.
 
-module.exports = { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance, users };
+module.exports = { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance };

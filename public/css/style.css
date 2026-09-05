@@ -812,33 +812,15 @@ ul { list-style: none; margin: 0; padding: 0; }
 .tip-write-head h3 { margin: 0; font-size: 1.1rem; color: var(--brown-deep); }
 .tip-write-close { background: none; font-size: 1rem; color: var(--gray-text); padding: 4px; }
 
-#tip-write-form,
-#notice-write-form,
-#photo-write-form,
-#member-new-form,
-#photo-edit-form,
-#tip-edit-form,
-#notice-edit-form { display: flex; flex-direction: column; gap: 6px; }
+.form-stack { display: flex; flex-direction: column; gap: 6px; }
 
 .tip-write-label { font-size: 0.8rem; font-weight: 700; color: var(--brown-deep); margin-top: 10px; }
 .tip-write-label:first-of-type,
 .member-new-label-first { margin-top: 0; }
 
-#tip-write-form input,
-#tip-write-form select,
-#tip-write-form textarea,
-#notice-write-form input,
-#notice-write-form textarea,
-#photo-write-form input[type="text"],
-#photo-write-form textarea,
-#member-new-form input[type="text"],
-#member-new-form textarea,
-#photo-edit-form input[type="text"],
-#photo-edit-form textarea,
-#tip-edit-form input[type="text"],
-#tip-edit-form textarea,
-#notice-edit-form input[type="text"],
-#notice-edit-form textarea {
+.form-stack input,
+.form-stack select,
+.form-stack textarea {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
@@ -849,21 +831,9 @@ ul { list-style: none; margin: 0; padding: 0; }
   resize: vertical;
 }
 
-#tip-write-form input:focus,
-#tip-write-form select:focus,
-#tip-write-form textarea:focus,
-#notice-write-form input:focus,
-#notice-write-form textarea:focus,
-#photo-write-form input[type="text"]:focus,
-#photo-write-form textarea:focus,
-#member-new-form input[type="text"]:focus,
-#member-new-form textarea:focus,
-#photo-edit-form input[type="text"]:focus,
-#photo-edit-form textarea:focus,
-#tip-edit-form input[type="text"]:focus,
-#tip-edit-form textarea:focus,
-#notice-edit-form input[type="text"]:focus,
-#notice-edit-form textarea:focus { outline: none; border-color: var(--pink-strong); }
+.form-stack input:focus,
+.form-stack select:focus,
+.form-stack textarea:focus { outline: none; border-color: var(--pink-strong); }
 
 .tip-write-counter { align-self: flex-end; font-size: 0.72rem; color: var(--gray-text); margin-top: 4px; }
 
@@ -961,6 +931,25 @@ ul { list-style: none; margin: 0; padding: 0; }
 /* 멤버 등록 페이지 */
 .member-new-panel { max-width: 460px; }
 
+.admin-user-result {
+  max-width: 460px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.admin-user-result.is-success { background: #dff3e6; color: #2f8a4e; }
+.admin-user-result.is-error { background: #fbe4e1; color: #c0392b; }
+
+.admin-user-list-section { max-width: 460px; margin-bottom: 24px; }
+.admin-user-list-section .notice-list { gap: 8px; }
+.admin-user-list-section .notice-list-row { padding: 12px 18px; }
+
+.user-type-admin { background: var(--brown-deep); color: var(--white); }
+.user-type-user { background: var(--pink-light); color: var(--brown-deep); }
+
 .member-avatar-dropzone {
   position: relative;
   width: 72px;
@@ -1043,7 +1032,6 @@ ul { list-style: none; margin: 0; padding: 0; }
 .login-form { display: flex; flex-direction: column; gap: 12px; }
 .login-form input { border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 0.92rem; background: var(--cream-soft); }
 .login-form input:focus { outline: none; border-color: var(--pink-strong); }
-.login-error { color: #d64545; font-size: 0.82rem; margin: -8px 0 14px; }
 .login-hint { margin-top: 18px; font-size: 0.75rem; color: #c2ab9e; }
 
 /* =========================================================
@@ -1514,3 +1502,57 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .alert-modal-confirm:hover { background: #c65b52; }
+
+/* =========================================================
+   로그인 성공/실패 모달
+========================================================= */
+.login-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(41, 26, 18, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 300;
+}
+
+.login-alert-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(74, 44, 29, 0.28);
+}
+
+.login-alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.login-alert-icon-fail { background: var(--pink-light); color: var(--pink-deep); }
+.login-alert-icon-success { background: #dff3e6; color: #2f8a4e; }
+
+.login-alert-title { margin: 0 0 6px; font-size: 1.1rem; color: var(--brown-deep); }
+.login-alert-sub { margin: 0 0 22px; font-size: 0.85rem; color: var(--gray-text); }
+
+.login-alert-confirm {
+  width: 100%;
+  padding: 13px;
+  border-radius: 999px;
+  background: var(--pink-deep);
+  color: var(--white);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.login-alert-confirm:hover { opacity: 0.9; }

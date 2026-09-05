@@ -264,6 +264,17 @@
   </main>
 </div>
 
+<% if (loginSuccess && currentUser) { %>
+  <div class="login-alert-overlay">
+    <div class="login-alert-modal">
+      <span class="login-alert-icon login-alert-icon-success">✓</span>
+      <h3 class="login-alert-title">로그인에 성공했어요!</h3>
+      <p class="login-alert-sub"><%= currentUser.nickname %>님, 환영합니다.</p>
+      <button type="button" class="login-alert-confirm" data-close-login-alert>확인</button>
+    </div>
+  </div>
+<% } %>
+
 <%- include('partials/attendance_modal') %>
 <%- include('partials/vote_result_modal') %>
 <%- include('partials/footer') %>

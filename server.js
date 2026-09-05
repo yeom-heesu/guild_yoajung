@@ -4,7 +4,8 @@ const path = require("path");
 
 // TODO(API 연동): 지금은 로컬 목업 데이터를 사용합니다.
 // 실제 서비스 전환 시 이 require 대신 API 클라이언트(axios 등)로 교체하세요.
-const { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance, users } = require("./data/mockData");
+const { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance } = require("./data/mockData");
+const { log } = require("console");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,8 +45,21 @@ function requireLogin(req, res, next) {
   next();
 }
 
-// 관리자(마스터/부마스터) 전용 가드 - 팁 & 공략 글쓰기에 사용
-const ADMIN_ROLES = ["마스터", "부마스터"];
+// 실제 사용자 계정 DB API 서버
+const EXTERNAL_API_BASE = "http://painvegas53.iptime.org:8026";
+
+// 외부 API는 JSON이 아닌 form(application/x-www-form-urlencoded)으로 파라미터를 받음
+// null/undefined 값은 제외하고 URLSearchParams로 변환
+function toFormBody(params) {
+  const body = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) body.append(key, value);
+  });
+  return body;
+}
+
+// 관리자(userType: ADMIN) 전용 가드 - 팁 & 공략 글쓰기 등에 사용
+const ADMIN_ROLES = ["ADMIN"];
 function isAdmin(user) {
   return !!user && ADMIN_ROLES.includes(user.role);
 }
@@ -152,24 +166,35 @@ app.get("/login", (req, res) => {
   res.render("login", { error: null });
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  // TODO(API 연동): POST /api/auth/login 으로 교체
-  const found = users.find((u) => u.username === username && u.password === password);
+  try {
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/loginUser`, {
+      method: "POST",
+      body: toFormBody({ userId: username, userPw: password }),
+    });
+    const data = await apiRes.json();
 
-  if (!found) {
-    return res.render("login", { error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+    console.log(data);
+    if (!data.success || !data.userInfo) {
+      // 참고: 외부 API가 미존재 계정 등에서 500(내부 에러 메시지)을 그대로 내려주는 경우가 있어
+      // 사용자에게는 항상 일반적인 안내 문구만 노출합니다.
+      return res.render("login", { error: "아이디 또는 비밀번호를 다시 확인해주세요." });
+    }
+
+    const info = data.userInfo;
+    req.session.user = {
+      id: info.userIdx,
+      username: info.userId,
+      nickname: info.userNm,
+      avatar: `/images/members/member_${(Number(info.userIdx) % 70) }.png`,
+      role: info.userType,
+    };
+    res.redirect("/?login=success");
+  } catch (err) {
+    res.render("login", { error: "로그인 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요." });
   }
-
-  req.session.user = {
-    id: found.id,
-    username: found.username,
-    nickname: found.nickname,
-    avatar: found.avatar,
-    role: found.role,
-  };
-  res.redirect("/");
 });
 
 app.post("/logout", (req, res) => {
@@ -198,6 +223,7 @@ app.get("/", (req, res) => {
     abyssVoted: hasVoted("abyss", nickname),
     concertStats: computeVoteStats("concert"),
     abyssStats: computeVoteStats("abyss"),
+    loginSuccess: req.query.login === "success",
   });
 });
 
@@ -253,7 +279,7 @@ app.get("/notice/:id", (req, res) => {
   res.render("notice_detail", { pageTitle: "공지사항", notice });
 });
 
-// TODO(API 연동): POST /api/notices 로 교체 - 등록은 관리자(마스터/부마스터)만 가능
+// TODO(API 연동): POST /api/notices 로 교체 - 등록은 관리자(ADMIN)만 가능
 app.post("/notice", requireAdmin, (req, res) => {
   const { title, category, content } = req.body;
   notices.unshift({
@@ -314,7 +340,7 @@ app.get("/tips/:id", (req, res) => {
   res.render("tip_detail", { pageTitle: "팁 & 공략", tip });
 });
 
-// TODO(API 연동): POST /api/tips 로 교체 - 글쓰기는 관리자(마스터/부마스터)만 가능
+// TODO(API 연동): POST /api/tips 로 교체 - 글쓰기는 관리자(ADMIN)만 가능
 app.post("/tips", requireAdmin, (req, res) => {
   const { title, category, content } = req.body;
   tips.unshift({
@@ -543,6 +569,134 @@ app.post("/members/:id/edit", requireLogin, (req, res) => {
     member.intro = req.body.intro || member.intro;
   }
   res.redirect(`/members/${req.params.id}`);
+});
+
+// ---------- 사용자 계정 등록/수정 (외부 API 연동, 관리자 전용) ----------
+const EMPTY_ADMIN_USER_FORM = { userId: "", userNm: "", userType: "USER", userPhone: "", userEmail: "", userMemo: "" };
+
+// addUser/upUser 호출 전 세션을 얻기 위한 서비스 계정. 운영 전환 시 하드코딩 대신 환경변수로 분리 권장
+const EXTERNAL_API_SERVICE_ACCOUNT = {
+  userId: process.env.EXTERNAL_API_USER_ID || "admin",
+  userPw: process.env.EXTERNAL_API_USER_PW || "admin",
+};
+
+// 외부 API 로그인 후 세션 쿠키(JSESSIONID)를 반환. 로그인 실패 시 sessionCookie: null
+async function loginExternalApi() {
+  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/loginUser`, {
+    method: "POST",
+    body: toFormBody(EXTERNAL_API_SERVICE_ACCOUNT),
+  });
+  const data = await res.json().catch(() => ({}));
+  const setCookie = res.headers.get("set-cookie");
+  const sessionCookie = data.success && setCookie ? setCookie.split(";")[0] : null;
+  return { success: !!data.success, message: data.message || "로그인 응답을 확인할 수 없습니다.", sessionCookie };
+}
+
+// 사용자 목록 조회 (세션 불필요, 조회 확인됨)
+async function fetchExternalUserList() {
+  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getUserList`);
+  const data = await res.json().catch(() => ({}));
+  return data.success && Array.isArray(data.userList) ? data.userList : [];
+}
+
+app.get("/admin/users/new", requireAdmin, async (req, res) => {
+  let userList = [];
+  let userListError = null;
+  try {
+    userList = await fetchExternalUserList();
+  } catch (err) {
+    userListError = "사용자 목록을 불러오지 못했습니다.";
+  }
+
+  res.render("admin_user_new", {
+    pageTitle: "사용자 계정 등록",
+    result: null,
+    form: EMPTY_ADMIN_USER_FORM,
+    userList,
+    userListError,
+  });
+});
+
+app.post("/admin/users", requireAdmin, async (req, res) => {
+  const { userType, userId, userPw, userNm, userPhone, userEmail, userMemo } = req.body;
+  const form = { userId, userNm, userType, userPhone: userPhone || "", userEmail: userEmail || "", userMemo: userMemo || "" };
+
+  const userList = await fetchExternalUserList().catch(() => []);
+
+  try {
+    const login = await loginExternalApi();
+    if (!login.sessionCookie) {
+      throw new Error(`세션 로그인 실패: ${login.message}`);
+    }
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/addUser`, {
+      method: "POST",
+      headers: { Cookie: login.sessionCookie },
+      body: toFormBody({ userType, userId, userPw, userNm, userPhone, userEmail, userMemo }),
+    });
+    const data = await apiRes.json();
+
+    // 참고: API 명세상 ID 중복 등 실패 케이스도 success:true로 내려오는 것으로 보여
+    // message 문구로 실제 성공 여부를 다시 판단합니다. API가 수정되면 data.success만 봐도 됩니다.
+    const actuallySucceeded = !!data.success && data.message && data.message.includes("추가했습니다");
+
+    res.render("admin_user_new", {
+      pageTitle: "사용자 계정 등록",
+      result: { success: actuallySucceeded, message: data.message || "알 수 없는 응답입니다." },
+      form: actuallySucceeded ? EMPTY_ADMIN_USER_FORM : form,
+      userList: actuallySucceeded ? await fetchExternalUserList().catch(() => userList) : userList,
+      userListError: null,
+    });
+  } catch (err) {
+    res.render("admin_user_new", {
+      pageTitle: "사용자 계정 등록",
+      result: { success: false, message: err.message || "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." },
+      form,
+      userList,
+      userListError: null,
+    });
+  }
+});
+
+// TODO(화면 미구현): 아직 수정 페이지 UI는 없음 - 우선 API 연동만 추가. JSON으로 응답.
+app.post("/admin/users/:userIdx/edit", requireAdmin, async (req, res) => {
+  const { userType, userId, userPw, userNm, userPhone, userEmail, userMemo } = req.body;
+  const payload = { userIdx: req.params.userIdx };
+  // "null이 아닌 값만 수정" 명세에 맞춰, 실제로 입력된 필드만 함께 보냄
+  if (userType) payload.userType = userType;
+  if (userId) payload.userId = userId;
+  if (userPw) payload.userPw = userPw;
+  if (userNm) payload.userNm = userNm;
+  if (userPhone) payload.userPhone = userPhone;
+  if (userEmail) payload.userEmail = userEmail;
+  if (userMemo) payload.userMemo = userMemo;
+
+  let result;
+  try {
+    const login = await loginExternalApi();
+    if (!login.sessionCookie) {
+      throw new Error(`세션 로그인 실패: ${login.message}`);
+    }
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/upUser`, {
+      method: "POST",
+      headers: { Cookie: login.sessionCookie },
+      body: toFormBody(payload),
+    });
+    const data = await apiRes.json();
+    result = { success: !!data.success, message: data.message || "알 수 없는 응답입니다." };
+  } catch (err) {
+    result = { success: false, message: err.message || "서버 요청에 실패했습니다." };
+  }
+
+  const userList = await fetchExternalUserList().catch(() => []);
+  res.render("admin_user_new", {
+    pageTitle: "사용자 계정 등록",
+    result,
+    form: EMPTY_ADMIN_USER_FORM,
+    userList,
+    userListError: null,
+  });
 });
 
 app.listen(PORT, () => {

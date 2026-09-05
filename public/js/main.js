@@ -5,6 +5,17 @@ function toggleForm(formId) {
   form.classList.toggle("hidden");
 }
 
+// 로그인 성공/실패 모달 닫기 (성공 모달은 닫을 때 ?login=success 쿼리도 정리)
+document.querySelectorAll("[data-close-login-alert]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const overlay = btn.closest(".login-alert-overlay");
+    if (overlay) overlay.remove();
+    if (window.location.search.includes("login=success")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  });
+});
+
 // 팁 & 공략 게시판 : 카테고리 필터
 (function initTipFilter() {
   const filterRow = document.querySelector("[data-tip-filter]");
@@ -636,6 +647,50 @@ bindCharCounter("photoEditContent", "photoEditCount");
       if (!role.value.value) role.options.hidden = false;
       else job.options.hidden = false;
     }
+  });
+})();
+
+// 사용자 계정 관리 : 사용자 목록의 [수정] 버튼 -> 수정 모달에 값 채워서 열기
+(function initUserEditModal() {
+  const overlay = document.getElementById("userEditOverlay");
+  if (!overlay) return;
+
+  const closeBtn = document.getElementById("userEditClose");
+  const cancelBtn = document.getElementById("userEditCancel");
+  const form = document.getElementById("user-edit-form");
+  const idInput = document.getElementById("userEditId");
+  const nmInput = document.getElementById("userEditNm");
+  const typeSelect = document.getElementById("userEditType");
+  const phoneInput = document.getElementById("userEditPhone");
+  const emailInput = document.getElementById("userEditEmail");
+  const memoInput = document.getElementById("userEditMemo");
+
+  function close() {
+    overlay.hidden = true;
+  }
+
+  document.querySelectorAll("[data-edit-user]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const d = btn.dataset;
+      form.action = "/admin/users/" + d.userIdx + "/edit";
+      idInput.value = d.userId || "";
+      nmInput.value = d.userNm || "";
+      typeSelect.value = d.userType || "USER";
+      phoneInput.value = d.userPhone || "";
+      emailInput.value = d.userEmail || "";
+      memoInput.value = d.userMemo || "";
+      overlay.hidden = false;
+    });
+  });
+
+  closeBtn.addEventListener("click", close);
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) close();
   });
 })();
 

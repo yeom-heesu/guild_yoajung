@@ -13,11 +13,6 @@
       <h1 class="login-title">요아정 길드</h1>
       <p class="login-sub">매일이 던전 데이, 우리들의 길드</p>
 
-      <% if (error) { %>
-        <p class="login-error"><%= error %></p>
-      <% } %>
-
-      <!-- TODO(API 연동): action은 실제 로그인 API 엔드포인트와 연결 -->
       <form action="/login" method="POST" class="login-form">
         <input type="text" name="username" placeholder="아이디" required autocomplete="username" />
         <input type="password" name="password" placeholder="비밀번호" required autocomplete="current-password" />
@@ -27,5 +22,18 @@
       <p class="login-hint">가입문의 : 망고빙수</p>
     </div>
   </div>
+
+  <% if (error) { %>
+    <div class="login-alert-overlay">
+      <div class="login-alert-modal">
+        <span class="login-alert-icon login-alert-icon-fail">‹</span>
+        <h3 class="login-alert-title">로그인에 실패했어요</h3>
+        <p class="login-alert-sub"><%= error %></p>
+        <button type="button" class="login-alert-confirm" data-close-login-alert>다시 시도</button>
+      </div>
+    </div>
+  <% } %>
+
+  <script src="/js/main.js"></script>
 </body>
 </html>
