@@ -177,7 +177,6 @@ app.post("/login", async (req, res) => {
     });
     const data = await apiRes.json();
 
-    console.log(data);
     if (!data.success || !data.userInfo) {
       // 참고: 외부 API가 미존재 계정 등에서 500(내부 에러 메시지)을 그대로 내려주는 경우가 있어
       // 사용자에게는 항상 일반적인 안내 문구만 노출합니다.
