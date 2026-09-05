@@ -16,14 +16,16 @@
           <span class="brand-text">요아정 길드</span>
         </a>
 
-        <!-- 데스크탑 전용 GNB (피그마 상단 탭) -->
-        <nav class="topnav-gnb">
-          <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">홈</a>
-          <a href="/#section-members" class="<%= currentPath.startsWith('/members') ? 'active' : '' %>">멤버소개</a>
-          <a href="/#section-notice" class="<%= currentPath.startsWith('/notice') ? 'active' : '' %>">공지사항</a>
-          <a href="/#section-tips" class="<%= currentPath.startsWith('/tips') ? 'active' : '' %>">팁 &amp; 공략</a>
-          <a href="/#section-photos" class="<%= currentPath.startsWith('/photos') ? 'active' : '' %>">스크린샷</a>
-        </nav>
+        <!-- 데스크탑 전용 GNB (피그마 상단 탭) : 메인 화면에서만 노출 -->
+        <% if (currentPath === '/') { %>
+          <nav class="topnav-gnb">
+            <a href="/" class="active">홈</a>
+            <a href="/#section-members">멤버소개</a>
+            <a href="/#section-notice">공지사항</a>
+            <a href="/#section-tips">팁 &amp; 공략</a>
+            <a href="/#section-photos">스크린샷</a>
+          </nav>
+        <% } %>
 
         <div class="topbar-right">
           <div class="topbar-auth">
