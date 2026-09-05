@@ -34,6 +34,7 @@ app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   res.locals.currentPath = req.path;
   res.locals.isAdmin = isAdmin(req.session.user);
+  res.locals.guildIntro = guildIntro;
   next();
 });
 

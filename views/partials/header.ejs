@@ -12,7 +12,7 @@
     <header class="topbar">
       <div class="topbar-inner">
         <a href="/" class="brand">
-          <span class="brand-emblem">🍫</span>
+          <span class="brand-emblem" <% if (guildIntro && guildIntro.bannerImage) { %>style="background-image:url('<%= guildIntro.bannerImage %>')"<% } %>><% if (!guildIntro || !guildIntro.bannerImage) { %>🍫<% } %></span>
           <span class="brand-text">요아정 길드</span>
         </a>
 
@@ -63,7 +63,7 @@
       <div class="mobile-menu-panel">
         <div class="mobile-menu-head">
           <a href="/" class="brand">
-            <span class="brand-emblem"></span>
+            <span class="brand-emblem" <% if (guildIntro && guildIntro.bannerImage) { %>style="background-image:url('<%= guildIntro.bannerImage %>')"<% } %>><% if (!guildIntro || !guildIntro.bannerImage) { %>🍫<% } %></span>
             <span class="brand-text">요아정 길드</span>
           </a>
           <button type="button" class="mobile-menu-close" id="mobileMenuClose" aria-label="메뉴 닫기">✕</button>

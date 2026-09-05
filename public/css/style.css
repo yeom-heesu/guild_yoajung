@@ -80,13 +80,17 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 .brand-emblem {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--brown-deep);
-  font-size: 0;
-  color: transparent;
+  background-color: var(--brown-deep);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  font-size: 15px;
 }
 
 .topnav-gnb {
@@ -219,6 +223,8 @@ ul { list-style: none; margin: 0; padding: 0; }
   flex-direction: column;
   gap: 20px;
 }
+
+.home-content { gap: 70px; }
 
 .back-links { display: flex; gap: 16px; }
 
