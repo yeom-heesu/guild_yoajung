@@ -4,7 +4,7 @@ const path = require("path");
 
 // TODO(API 연동): 지금은 로컬 목업 데이터를 사용합니다.
 // 실제 서비스 전환 시 이 require 대신 API 클라이언트(axios 등)로 교체하세요.
-const { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance } = require("./data/mockData");
+const { guildIntro, notices, tips, photos, polls, weeklyVote, attendance } = require("./data/mockData");
 const { log } = require("console");
 
 const app = express();
@@ -204,9 +204,10 @@ app.post("/logout", (req, res) => {
 });
 
 // ---------- 대시보드(홈) : 비회원도 접근 가능 ----------
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
   syncWeeklyVote();
   const nickname = req.session.user && req.session.user.nickname;
+  const members = sortMembersByRole((await fetchExternalMemberList().catch(() => [])).map(mapMember));
 
   res.render("index", {
     pageTitle: "홈",
@@ -527,48 +528,103 @@ app.post("/polls/:id/delete", requireLogin, (req, res) => {
   res.redirect("/polls");
 });
 
-// ---------- 길드원 리스트 : 조회는 비회원도 가능, 등록/수정은 로그인 필요 ----------
-app.get("/members", (req, res) => {
-  res.render("members", { pageTitle: "멤버소개", members });
+// ---------- 길드원 리스트 (외부 멤버 API 연동) : 조회는 비회원도 가능, 등록/수정은 로그인 필요 ----------
+app.get("/members", async (req, res) => {
+  const list = await fetchExternalMemberList().catch(() => []);
+  res.render("members", { pageTitle: "멤버소개", members: sortMembersByRole(list.map(mapMember)) });
 });
+
+const EMPTY_MEMBER_FORM = { nickname: "", role: "", job: "", level: "", intro: "" };
 
 // 주의: '/members/:id'보다 먼저 등록해야 'new'가 id로 잘못 해석되지 않음
 app.get("/members/new", requireLogin, (req, res) => {
-  res.render("member_new", { pageTitle: "멤버 등록" });
+  res.render("member_new", { pageTitle: "멤버 등록", result: null, form: EMPTY_MEMBER_FORM });
 });
 
-app.get("/members/:id", (req, res) => {
-  const member = members.find((m) => m.id === Number(req.params.id));
-  if (!member) return res.redirect("/members");
-  res.render("member_detail", { pageTitle: "멤버소개", member });
+app.get("/members/:id", async (req, res) => {
+  const info = await fetchExternalMember(req.params.id).catch(() => null);
+  if (!info) return res.redirect("/members");
+  res.render("member_detail", { pageTitle: "멤버소개", member: mapMember(info), editResult: null });
 });
 
-app.post("/members", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/members 로 교체
-  const { nickname, avatar, role, job, intro } = req.body;
-  members.unshift({
-    id: members.length ? Math.max(...members.map((m) => m.id)) + 1 : 1,
-    nickname,
-    job: job || "미정",
-    level: 1,
-    role: role || "길드원",
-    joinDate: new Date().toISOString().slice(0, 10),
-    status: "온라인",
-    avatar: avatar || "https://i.pravatar.cc/300?img=12",
-    intro,
-  });
-  res.redirect("/members");
-});
+app.post("/members", requireLogin, async (req, res) => {
+  const { nickname, avatar, role, job, level, intro } = req.body;
+  const form = { nickname, role, job, level, intro };
 
-app.post("/members/:id/edit", requireLogin, (req, res) => {
-  // TODO(API 연동): PATCH /api/members/:id 로 교체
-  const member = members.find((m) => m.id === Number(req.params.id));
-  if (member) {
-    member.nickname = req.body.nickname || member.nickname;
-    member.avatar = req.body.avatar || member.avatar;
-    member.intro = req.body.intro || member.intro;
+  try {
+    const login = await loginExternalApi();
+    if (!login.sessionCookie) {
+      throw new Error(`세션 로그인 실패: ${login.message}`);
+    }
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/addMember`, {
+      method: "POST",
+      headers: { Cookie: login.sessionCookie },
+      body: toFormBody({
+        userIdx: req.session.user.id,
+        userNickName: nickname,
+        userGameRoll: job,
+        userGameLevel: level,
+        userClanRoll: role,
+        userIntro: intro,
+        userProfileImage: avatar,
+      }),
+    });
+    const data = await apiRes.json();
+    if (!data.success) {
+      // 참고: 실패 시 data.message에 DB 예외 메시지가 그대로 담겨오는 경우가 있어 노출하지 않고 일반 문구로 대체
+      return res.render("member_new", {
+        pageTitle: "멤버 등록",
+        result: { success: false, message: "멤버 등록에 실패했습니다. 잠시 후 다시 시도해주세요." },
+        form,
+      });
+    }
+  } catch (err) {
+    return res.render("member_new", {
+      pageTitle: "멤버 등록",
+      result: { success: false, message: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." },
+      form,
+    });
   }
-  res.redirect(`/members/${req.params.id}`);
+
+  res.redirect(`/members/${req.session.user.id}`);
+});
+
+app.post("/members/:id/edit", requireLogin, async (req, res) => {
+  const { nickname, avatar, role, job, level, intro } = req.body;
+  console.log(req)
+  const payload = { userIdx: req.params.id };
+  // "선택 값은 입력된 필드만 반영" 정책에 맞춰, 실제로 입력된 필드만 함께 보냄
+  if (nickname) payload.userNickName = nickname;
+  if (job) payload.userGameRoll = job;
+  if (level) payload.userGameLevel = level;
+  if (role) payload.userClanRoll = role;
+  if (intro) payload.userIntro = intro;
+  if (avatar) payload.userProfileImage = avatar;
+
+  let editResult;
+  try {
+    const login = await loginExternalApi();
+    if (!login.sessionCookie) {
+      throw new Error(`세션 로그인 실패: ${login.message}`);
+    }
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/upMember`, {
+      method: "POST",
+      headers: { Cookie: login.sessionCookie },
+      body: toFormBody(payload),
+    });
+    const data = await apiRes.json();
+    // 참고: 실패 시 data.message에 DB 예외 메시지가 그대로 담겨오는 경우가 있어 노출하지 않고 일반 문구로 대체
+    editResult = data.success
+      ? { success: true, message: "멤버 정보가 수정되었습니다." }
+      : { success: false, message: "멤버 수정에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  } catch (err) {
+    editResult = { success: false, message: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  }
+
+  const info = await fetchExternalMember(req.params.id).catch(() => null);
+  if (!info) return res.redirect("/members");
+  res.render("member_detail", { pageTitle: "멤버소개", member: mapMember(info), editResult });
 });
 
 // ---------- 사용자 계정 등록/수정 (외부 API 연동, 관리자 전용) ----------
@@ -597,6 +653,43 @@ async function fetchExternalUserList() {
   const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getUserList`);
   const data = await res.json().catch(() => ({}));
   return data.success && Array.isArray(data.userList) ? data.userList : [];
+}
+
+// 외부 멤버 API 응답을 기존 화면(member.nickname/job/level/role/intro/avatar)에서 쓰던 필드 형태로 변환
+function mapMember(m) {
+  return {
+    id: m.userIdx,
+    nickname: m.userNickName || "이름 미정",
+    job: m.userGameRoll || "미정",
+    level: m.userGameLevel || "-",
+    role: m.userClanRoll || "길드원",
+    intro: m.userIntro || "",
+    avatar: m.userProfileImage || "https://i.pravatar.cc/300?img=12",
+  };
+}
+
+// 멤버 목록을 길드장 → 부길드장 → 길드원 순으로 정렬 (그 외 값은 맨 뒤)
+const MEMBER_ROLE_ORDER = { 길드장: 0, 부길드장: 1, 길드원: 2 };
+function sortMembersByRole(list) {
+  return [...list].sort((a, b) => {
+    const orderA = MEMBER_ROLE_ORDER[a.role] ?? 99;
+    const orderB = MEMBER_ROLE_ORDER[b.role] ?? 99;
+    return orderA - orderB;
+  });
+}
+
+// 멤버 목록 조회 (세션 불필요)
+async function fetchExternalMemberList() {
+  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getMemberList`);
+  const data = await res.json().catch(() => ({}));
+  return data.success && Array.isArray(data.memberList) ? data.memberList : [];
+}
+
+// 멤버 단건 조회 (세션 불필요)
+async function fetchExternalMember(userIdx) {
+  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getMember?userIdx=${encodeURIComponent(userIdx)}`);
+  const data = await res.json().catch(() => ({}));
+  return data.success ? data.memberInfo : null;
 }
 
 app.get("/admin/users/new", requireAdmin, async (req, res) => {
@@ -637,8 +730,10 @@ app.post("/admin/users", requireAdmin, async (req, res) => {
     const data = await apiRes.json();
 
     // 참고: API 명세상 ID 중복 등 실패 케이스도 success:true로 내려오는 것으로 보여
-    // message 문구로 실제 성공 여부를 다시 판단합니다. API가 수정되면 data.success만 봐도 됩니다.
-    const actuallySucceeded = !!data.success && data.message && data.message.includes("추가했습니다");
+    // (실측 결과 성공 메시지 문구가 "새로운 사용자가 추가되었습니다."로 스펙 문서와 살짝 다르게 내려옴)
+    // 정확한 성공 문구에 의존하는 대신, 명세에 나온 실패 문구("이미 존재하는 ID")가 있을 때만 실패로 판단합니다.
+    const isDuplicateIdError = data.message && data.message.includes("이미 존재");
+    const actuallySucceeded = !!data.success && !isDuplicateIdError;
 
     res.render("admin_user_new", {
       pageTitle: "사용자 계정 등록",
@@ -658,7 +753,6 @@ app.post("/admin/users", requireAdmin, async (req, res) => {
   }
 });
 
-// TODO(화면 미구현): 아직 수정 페이지 UI는 없음 - 우선 API 연동만 추가. JSON으로 응답.
 app.post("/admin/users/:userIdx/edit", requireAdmin, async (req, res) => {
   const { userType, userId, userPw, userNm, userPhone, userEmail, userMemo } = req.body;
   const payload = { userIdx: req.params.userIdx };

@@ -8,7 +8,7 @@
     <h2 class="page-title">사용자 계정 등록</h2>
 
     <% if (result) { %>
-      <div class="admin-user-result <%= result.success ? 'is-success' : 'is-error' %>">
+      <div class="form-result <%= result.success ? 'is-success' : 'is-error' %>">
         <%= result.message %>
       </div>
     <% } %>
@@ -25,7 +25,7 @@
           <% userList.forEach(u => { %>
             <div class="notice-list-row">
               <span class="notice-list-badge user-type-<%= u.userType === 'ADMIN' ? 'admin' : 'user' %>"><%= u.userType %></span>
-              <span class="notice-list-title"><%= u.userNm %> (<%= u.userId %>)</span>
+              <span class="notice-list-title"><%= u.userIdx %> <%= u.userNm %> (<%= u.userId %>)</span>
               <span class="notice-list-meta"><%= u.stopYn === 'Y' ? '정지' : '정상' %> · <%= u.regDt ? u.regDt.slice(0, 10) : '-' %> 가입</span>
               <button
                 type="button"

@@ -943,7 +943,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 /* 멤버 등록 페이지 */
 .member-new-panel { max-width: 460px; }
 
-.admin-user-result {
+.form-result {
   max-width: 460px;
   padding: 14px 18px;
   border-radius: var(--radius-md);
@@ -952,8 +952,8 @@ ul { list-style: none; margin: 0; padding: 0; }
   margin-bottom: 16px;
 }
 
-.admin-user-result.is-success { background: #dff3e6; color: #2f8a4e; }
-.admin-user-result.is-error { background: #fbe4e1; color: #c0392b; }
+.form-result.is-success { background: #dff3e6; color: #2f8a4e; }
+.form-result.is-error { background: #fbe4e1; color: #c0392b; }
 
 .admin-user-list-section { max-width: 460px; margin-bottom: 24px; }
 .admin-user-list-section .notice-list { gap: 8px; }

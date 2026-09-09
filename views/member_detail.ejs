@@ -8,6 +8,17 @@
       <a href="/members" class="back-link">← 목록으로</a>
     </div>
 
+    <% if (editResult) { %>
+      <div class="form-result <%= editResult.success ? 'is-success' : 'is-error' %>">
+        <%= editResult.message %>
+      </div>
+    <% } %>
+
+    <%
+      const jobOptions = ["검술사", "대검전사", "화염술사", "빙결술사", "전격술사", "수도사", "석궁사수", "힐러"];
+      const roleOptions = ["길드장", "부길드장", "길드원"];
+    %>
+
     <section class="panel detail-panel">
       <div class="member-detail-avatar" style="background-image:url('<%= member.avatar %>')"></div>
 
@@ -20,19 +31,78 @@
 
       <% if (currentUser) { %>
         <div class="detail-actions">
-          <button type="button" class="btn-primary btn-sm" onclick="toggleForm('member-edit-form')">수정</button>
+          <button type="button" class="btn-primary btn-sm" id="memberEditOpen">수정</button>
         </div>
-
-        <!-- TODO(API 연동): PATCH /api/members/:id 로 교체 -->
-        <form action="/members/<%= member.id %>/edit" method="POST" id="member-edit-form" class="write-form hidden">
-          <input type="text" name="nickname" value="<%= member.nickname %>" required />
-          <input type="text" name="avatar" value="<%= member.avatar %>" />
-          <input type="text" name="intro" value="<%= member.intro %>" required />
-          <button type="submit" class="btn-primary btn-sm">저장하기</button>
-        </form>
       <% } %>
     </section>
   </main>
 </div>
+
+<!-- 멤버 정보 수정 모달 (멤버 등록 폼과 동일한 필드 구성) -->
+<% if (currentUser) { %>
+  <div class="tip-write-overlay" id="memberEditOverlay" hidden>
+    <div class="tip-write-modal">
+      <div class="tip-write-head">
+        <h3>멤버 정보 수정</h3>
+        <button type="button" class="tip-write-close" id="memberEditClose" aria-label="닫기">✕</button>
+      </div>
+
+      <form action="/members/<%= member.id %>/edit" method="POST" id="member-edit-form" class="form-stack">
+        <label class="tip-write-label member-new-label-first">프로필 이미지</label>
+        <div class="member-avatar-dropzone" id="memberEditAvatarDropzone">
+          <input type="file" accept="image/*" id="memberEditAvatarInput" hidden />
+          <div class="member-avatar-dropzone-inner" id="memberEditAvatarInner" <%= member.avatar ? "hidden" : "" %>>
+            <span class="member-avatar-dropzone-icon">+</span>
+            <span class="member-avatar-dropzone-text">이미지 등록</span>
+          </div>
+          <img class="member-avatar-preview" id="memberEditAvatarPreview" src="<%= member.avatar %>" <%= member.avatar ? "" : "hidden" %> />
+        </div>
+        <input type="hidden" name="avatar" id="memberEditAvatarValue" value="<%= member.avatar %>" />
+
+        <label class="tip-write-label">아이디</label>
+        <input type="text" name="nickname" value="<%= member.nickname %>" required />
+
+        <label class="tip-write-label">직급</label>
+        <div class="custom-select" id="memberEditRoleSelect">
+          <button type="button" class="custom-select-trigger has-value" id="memberEditRoleTrigger">
+            <span id="memberEditRoleTriggerText"><%= member.role %></span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="memberEditRoleOptions" hidden>
+            <% roleOptions.forEach(r => { %>
+              <div class="custom-select-option" data-value="<%= r %>"><span><%= r %></span></div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="role" id="memberEditRoleValue" value="<%= member.role %>" required />
+        </div>
+
+        <label class="tip-write-label">직업</label>
+        <div class="custom-select" id="memberEditJobSelect">
+          <button type="button" class="custom-select-trigger has-value" id="memberEditJobTrigger">
+            <span id="memberEditJobTriggerText"><%= member.job %></span>
+            <span class="custom-select-arrow">⌄</span>
+          </button>
+          <div class="custom-select-options" id="memberEditJobOptions" hidden>
+            <% jobOptions.forEach(j => { %>
+              <div class="custom-select-option" data-value="<%= j %>"><span><%= j %></span></div>
+            <% }) %>
+          </div>
+          <input type="hidden" name="job" id="memberEditJobValue" value="<%= member.job %>" required />
+        </div>
+
+        <label class="tip-write-label">레벨 (선택)</label>
+        <input type="text" name="level" placeholder="캐릭터 레벨을 입력해주세요" value="<%= member.level %>" />
+
+        <label class="tip-write-label">한줄 메시지</label>
+        <textarea name="intro" rows="2" maxlength="60" required><%= member.intro %></textarea>
+
+        <div class="tip-write-actions">
+          <button type="button" class="btn-outline" id="memberEditCancel">취소</button>
+          <button type="submit" class="btn-primary">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% } %>
 
 <%- include('partials/footer') %>

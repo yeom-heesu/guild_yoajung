@@ -345,6 +345,7 @@ function initEditModal(openId, overlayId, closeId, cancelId) {
 initEditModal("photoEditOpen", "photoEditOverlay", "photoEditClose", "photoEditCancel");
 initEditModal("tipEditOpen", "tipEditOverlay", "tipEditClose", "tipEditCancel");
 initEditModal("noticeEditOpen", "noticeEditOverlay", "noticeEditClose", "noticeEditCancel");
+initEditModal("memberEditOpen", "memberEditOverlay", "memberEditClose", "memberEditCancel");
 
 // 수정 폼 : 항목(카테고리) 커스텀 드롭다운 (스크린샷/팁/공지 공용)
 function initEditCategorySelect(prefix) {
@@ -377,6 +378,8 @@ function initEditCategorySelect(prefix) {
 initEditCategorySelect("photoEditCategory");
 initEditCategorySelect("tipEditCategory");
 initEditCategorySelect("noticeEditCategory");
+initEditCategorySelect("memberEditRole");
+initEditCategorySelect("memberEditJob");
 
 // 수정 폼 글자수 카운터 (스크린샷/팁/공지 공용)
 function bindCharCounter(textareaId, counterId) {
@@ -647,6 +650,31 @@ bindCharCounter("photoEditContent", "photoEditCount");
       if (!role.value.value) role.options.hidden = false;
       else job.options.hidden = false;
     }
+  });
+})();
+
+// 멤버 수정 모달 : 아바타 업로드 (멤버 등록 폼과 동일한 드롭존 동작)
+(function initMemberEditAvatar() {
+  const dropzone = document.getElementById("memberEditAvatarDropzone");
+  if (!dropzone) return;
+
+  const fileInput = document.getElementById("memberEditAvatarInput");
+  const inner = document.getElementById("memberEditAvatarInner");
+  const preview = document.getElementById("memberEditAvatarPreview");
+  const avatarValue = document.getElementById("memberEditAvatarValue");
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      avatarValue.value = reader.result;
+      preview.src = reader.result;
+      preview.hidden = false;
+      inner.hidden = true;
+    };
+    reader.readAsDataURL(file);
   });
 })();
 

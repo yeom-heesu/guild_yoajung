@@ -17,15 +17,7 @@ const guildIntro = {
   bannerImage: "/images/mainbanner.png",
 };
 
-// TODO(API 연동): GET/POST/PATCH /api/members 로 교체
-const members = [
-  { id: 1, nickname: "자몽톡톡", job: "대검전사", level: 100, role: "길드장", joinDate: "2023-11-02", status: "온라인", avatar: "/images/members/member_1.png", intro: "안녕하세요 톡톡입니다!" },
-  { id: 2, nickname: "망고빙수", job: "화염술사", level: 100, role: "부길드장", joinDate: "2023-12-15", status: "온라인", avatar: "/images/members/member_2.png", intro: "빙수에요" },
-  { id: 3, nickname: "오뜨야", job: "화염술사", level: 100, role: "부길드장", joinDate: "2024-01-20", status: "오프라인", avatar: "/images/members/member_3.png", intro: "오뜨야,오뜨르,오뜨모르" },
-  { id: 4, nickname: "사생", job: "수도사", level: 100, role: "길드원", joinDate: "2024-02-11", status: "온라인", avatar: "/images/members/member_4.png", intro: "잘 부탁드립니다. 사생입니다." },
-  { id: 5, nickname: "건마", job: "석궁사수", level: 100, role: "길드원", joinDate: "2024-03-05", status: "오프라인", avatar: "/images/members/member_5.png", intro: "건마" },
-
-];
+// 멤버 목록은 목업이 아닌 실제 멤버 API(getMemberList/getMember/addMember/upMember)를 사용합니다. server.js 참고.
 
 // TODO(API 연동): GET/POST/PATCH/DELETE /api/notices 로 교체
 // category: "공지" | "알림" | "이벤트" | "추첨결과"
@@ -272,4 +264,4 @@ const attendance = {
 
 // 로그인은 목업이 아닌 실제 계정 API(POST /v1Api/loginUser)를 사용합니다. server.js 참고.
 
-module.exports = { guildIntro, members, notices, tips, photos, polls, weeklyVote, attendance };
+module.exports = { guildIntro, notices, tips, photos, polls, weeklyVote, attendance };
