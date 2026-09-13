@@ -12,6 +12,12 @@
       <% } %>
     </div>
 
+    <% if (result) { %>
+      <div class="form-result <%= result.success ? 'is-success' : 'is-error' %>">
+        <%= result.message %>
+      </div>
+    <% } %>
+
     <%
       const photoCatColor = {
         "어비스/레이드": "#a9d4f0",

@@ -4,7 +4,7 @@ const path = require("path");
 
 // TODO(API 연동): 지금은 로컬 목업 데이터를 사용합니다.
 // 실제 서비스 전환 시 이 require 대신 API 클라이언트(axios 등)로 교체하세요.
-const { guildIntro, notices, tips, photos, polls, weeklyVote, attendance } = require("./data/mockData");
+const { guildIntro, polls, weeklyVote } = require("./data/mockData");
 const { log } = require("console");
 
 const app = express();
@@ -59,6 +59,14 @@ function toFormBody(params) {
   return body;
 }
 
+// 외부 API 서버가 응답 없이 멈춰있을 때 우리 페이지까지 같이 멈추지 않도록 타임아웃을 둠
+// (fetch 기본 타임아웃이 없어 서버가 다운되면 요청이 수십 초씩 걸릴 수 있음)
+function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 // 관리자(userType: ADMIN) 전용 가드 - 팁 & 공략 글쓰기 등에 사용
 const ADMIN_ROLES = ["ADMIN"];
 function isAdmin(user) {
@@ -72,18 +80,9 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// 출석 도장판을 월마다 초기화 + 출석 모달에 필요한 날짜 정보 계산
+// 출석 모달/도장판에 필요한 이번 달 날짜 정보 계산 (실제 데이터는 getAttendCheckHist로 조회)
 function syncAttendanceMonth() {
   const now = new Date();
-  const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-
-  if (attendance.checkedMonth !== monthKey) {
-    attendance.checkedMonth = monthKey;
-    attendance.checkedDays = [];
-    attendance.todayChecked = false;
-    attendance.monthlyCount = 0;
-    attendance.streak = 0;
-  }
 
   return {
     attMonthLabel: now.getMonth() + 1,
@@ -184,12 +183,15 @@ app.post("/login", async (req, res) => {
     }
 
     const info = data.userInfo;
+    const setCookie = apiRes.headers.get("set-cookie");
     req.session.user = {
       id: info.userIdx,
       username: info.userId,
       nickname: info.userNm,
       avatar: `/images/members/member_${(Number(info.userIdx) % 70) }.png`,
       role: info.userType,
+      // 출석체크(addAttendCheck)처럼 별도 식별자 없이 "로그인 세션 자체"로 본인을 판별하는 API 호출에 사용
+      externalSessionCookie: setCookie ? setCookie.split(";")[0] : null,
     };
     res.redirect("/?login=success");
   } catch (err) {
@@ -207,7 +209,18 @@ app.post("/logout", (req, res) => {
 app.get("/", async (req, res) => {
   syncWeeklyVote();
   const nickname = req.session.user && req.session.user.nickname;
-  const members = sortMembersByRole((await fetchExternalMemberList().catch(() => [])).map(mapMember));
+  const [memberList, noticeList, tipList, photoList, attendHist] = await Promise.all([
+    fetchExternalMemberList().catch(() => []),
+    fetchExternalBbsList(BBS_TYPE.notice).catch(() => []),
+    fetchExternalBbsList(BBS_TYPE.tip).catch(() => []),
+    fetchExternalBbsList(BBS_TYPE.photo).catch(() => []),
+    fetchAttendHist().catch(() => []),
+  ]);
+  const members = sortMembersByRole(memberList.map(mapMember));
+  const notices = sortBbsByPinned(noticeList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
+  const tips = tipList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+  const photos = photoList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+  const attendance = buildAttendanceView(attendHist, req.session.user);
 
   res.render("index", {
     pageTitle: "홈",
@@ -248,79 +261,129 @@ app.post("/weekly-vote/:type", requireLogin, (req, res) => {
 });
 
 // ---------- 출석체크 : 조회는 비회원도 가능, 체크는 로그인 필요 ----------
-app.get("/attendance", (req, res) => {
+app.get("/attendance", async (req, res) => {
+  const hist = await fetchAttendHist().catch(() => []);
+  const attendance = buildAttendanceView(hist, req.session.user);
   res.render("attendance", { pageTitle: "출석체크", attendance, ...syncAttendanceMonth() });
 });
 
-app.post("/attendance/check", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/attendance 로 교체 (오늘 날짜 + req.session.user.id 전달)
-  const { attTodayDay } = syncAttendanceMonth();
-
-  if (!attendance.todayChecked) {
-    if (!attendance.checkedDays.includes(attTodayDay)) {
-      attendance.checkedDays.push(attTodayDay);
+app.post("/attendance/check", requireLogin, async (req, res) => {
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) {
+      throw new Error("로그인 세션 정보가 없습니다. 다시 로그인해주세요.");
     }
-    attendance.todayChecked = true;
-    attendance.monthlyCount = attendance.checkedDays.length;
-    attendance.streak += 1;
+
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/addAttendCheck`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    });
+  } catch (err) {
+    // TODO: 실패 사유를 화면에 노출하도록 개선
   }
 
   res.redirect(req.get("Referer") || "/attendance");
 });
 
-// ---------- 공지사항 ----------
-app.get("/notice", (req, res) => {
-  res.render("notice", { pageTitle: "공지사항", notices });
+// ---------- 공지사항 (외부 게시글 API 연동, bbsType="N") ----------
+app.get("/notice", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
+  const notices = sortBbsByPinned(list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
+  res.render("notice", { pageTitle: "공지사항", notices, result: null });
 });
 
-app.get("/notice/:id", (req, res) => {
-  const notice = notices.find((n) => n.id === Number(req.params.id));
-  if (!notice) return res.redirect("/notice");
-  notice.views = (notice.views || 0) + 1;
-  res.render("notice_detail", { pageTitle: "공지사항", notice });
+app.get("/notice/:id", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
+  const found = list.find((b) => String(b.bbsIdx) === req.params.id);
+  if (!found) return res.redirect("/notice");
+  const extras = getBbsExtras(found.bbsIdx, "공지");
+  extras.views += 1;
+  res.render("notice_detail", { pageTitle: "공지사항", notice: mapBbs(found, extras) });
 });
 
-// TODO(API 연동): POST /api/notices 로 교체 - 등록은 관리자(ADMIN)만 가능
-app.post("/notice", requireAdmin, (req, res) => {
+app.post("/notice", requireAdmin, async (req, res) => {
   const { title, category, content } = req.body;
-  notices.unshift({
-    id: notices.length ? Math.max(...notices.map((n) => n.id)) + 1 : 1,
-    title,
-    author: req.session.user.nickname,
-    date: new Date().toISOString().slice(0, 10),
-    pinned: false,
-    category: category || "공지",
-    content,
-    views: 0,
-    comments: [],
-  });
+  let errorResult = null;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/addBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsType: BBS_TYPE.notice, bbsTitle: title, bbsContext: content, fixYn: "N" }),
+    });
+    const data = await apiRes.json();
+
+    if (data.success) {
+      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
+      const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
+      const created = list.find((b) => b.bbsTitle === title && b.bbsContext === content);
+      if (created) {
+        getBbsExtras(created.bbsIdx, "공지").category = category || "공지";
+      }
+    } else {
+      errorResult = { success: false, message: "공지 등록에 실패했습니다. 잠시 후 다시 시도해주세요." };
+    }
+  } catch (err) {
+    errorResult = { success: false, message: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  }
+
+  if (errorResult) {
+    const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
+    const notices = sortBbsByPinned(list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
+    return res.render("notice", { pageTitle: "공지사항", notices, result: errorResult });
+  }
+
   res.redirect("/notice");
 });
 
-app.post("/notice/:id/edit", requireLogin, (req, res) => {
-  // TODO(API 연동): PATCH /api/notices/:id 로 교체
-  const notice = notices.find((n) => n.id === Number(req.params.id));
-  if (notice) {
-    notice.title = req.body.title || notice.title;
-    notice.category = req.body.category || notice.category;
-    notice.content = req.body.content || notice.content;
+app.post("/notice/:id/edit", requireLogin, async (req, res) => {
+  const { title, category, content } = req.body;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, bbsType: BBS_TYPE.notice, bbsTitle: title, bbsContext: content }),
+    });
+  } catch (err) {
+    // TODO: 수정 실패 사유를 화면에 노출하도록 개선
   }
+
+  if (category) getBbsExtras(req.params.id, "공지").category = category;
   res.redirect(`/notice/${req.params.id}`);
 });
 
-app.post("/notice/:id/delete", requireLogin, (req, res) => {
-  // TODO(API 연동): DELETE /api/notices/:id 로 교체
-  const idx = notices.findIndex((n) => n.id === Number(req.params.id));
-  if (idx !== -1) notices.splice(idx, 1);
+app.post("/notice/:id/delete", requireLogin, async (req, res) => {
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    // 별도 삭제 API가 없어 upBbs의 delYn="Y"로 소프트 삭제 처리
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, delYn: "Y" }),
+    });
+  } catch (err) {
+    // TODO: 삭제 실패 사유를 화면에 노출하도록 개선
+  }
+
+  delete bbsExtras[req.params.id];
   res.redirect("/notice");
 });
 
 app.post("/notice/:id/comments", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/notices/:id/comments 로 교체
-  const notice = notices.find((n) => n.id === Number(req.params.id));
-  if (notice && req.body.content && req.body.content.trim()) {
-    notice.comments.push({
-      id: notice.comments.length ? Math.max(...notice.comments.map((c) => c.id)) + 1 : 1,
+  // 참고: bbs API에 댓글 개념이 없어 다른 게시판들과 동일하게 로컬(메모리)에서만 관리합니다.
+  const extras = getBbsExtras(req.params.id, "공지");
+  if (req.body.content && req.body.content.trim()) {
+    extras.comments.push({
+      id: extras.comments.length ? Math.max(...extras.comments.map((c) => c.id)) + 1 : 1,
       author: req.session.user.nickname,
       date: new Date().toISOString().slice(0, 10),
       content: req.body.content.trim(),
@@ -329,40 +392,67 @@ app.post("/notice/:id/comments", requireLogin, (req, res) => {
   res.redirect(`/notice/${req.params.id}`);
 });
 
-// ---------- 팁 & 공략 : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
-app.get("/tips", (req, res) => {
-  res.render("tips", { pageTitle: "팁 & 공략", tips });
+// ---------- 팁 & 공략 (외부 게시글 API 연동, bbsType="T") : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
+app.get("/tips", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
+  const tips = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+  res.render("tips", { pageTitle: "팁 & 공략", tips, result: null });
 });
 
-app.get("/tips/:id", (req, res) => {
-  const tip = tips.find((t) => t.id === Number(req.params.id));
-  if (!tip) return res.redirect("/tips");
-  tip.views = (tip.views || 0) + 1;
-  res.render("tip_detail", { pageTitle: "팁 & 공략", tip });
+app.get("/tips/:id", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
+  const found = list.find((b) => String(b.bbsIdx) === req.params.id);
+  if (!found) return res.redirect("/tips");
+  const extras = getBbsExtras(found.bbsIdx, "생활팁");
+  extras.views += 1;
+  res.render("tip_detail", { pageTitle: "팁 & 공략", tip: mapBbs(found, extras) });
 });
 
-// TODO(API 연동): POST /api/tips 로 교체 - 글쓰기는 관리자(ADMIN)만 가능
-app.post("/tips", requireAdmin, (req, res) => {
+// 글쓰기는 관리자(ADMIN)만 가능
+app.post("/tips", requireAdmin, async (req, res) => {
   const { title, category, content } = req.body;
-  tips.unshift({
-    id: tips.length ? Math.max(...tips.map((t) => t.id)) + 1 : 1,
-    title,
-    author: req.session.user.nickname,
-    date: new Date().toISOString().slice(0, 10),
-    category: category || "생활팁",
-    content,
-    views: 0,
-    comments: [],
-  });
+  let errorResult = null;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/addBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsType: BBS_TYPE.tip, bbsTitle: title, bbsContext: content, fixYn: "N" }),
+    });
+    const data = await apiRes.json();
+
+    if (data.success) {
+      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
+      const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
+      const created = list.find((b) => b.bbsTitle === title && b.bbsContext === content);
+      if (created) {
+        getBbsExtras(created.bbsIdx, "생활팁").category = category || "생활팁";
+      }
+    } else {
+      errorResult = { success: false, message: "글 등록에 실패했습니다. 잠시 후 다시 시도해주세요." };
+    }
+  } catch (err) {
+    errorResult = { success: false, message: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  }
+
+  if (errorResult) {
+    const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
+    const tips = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+    return res.render("tips", { pageTitle: "팁 & 공략", tips, result: errorResult });
+  }
+
   res.redirect("/tips");
 });
 
 app.post("/tips/:id/comments", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/tips/:id/comments 로 교체
-  const tip = tips.find((t) => t.id === Number(req.params.id));
-  if (tip && req.body.content && req.body.content.trim()) {
-    tip.comments.push({
-      id: tip.comments.length ? Math.max(...tip.comments.map((c) => c.id)) + 1 : 1,
+  // 참고: bbs API에 댓글 개념이 없어 로컬(메모리)에서만 관리합니다.
+  const extras = getBbsExtras(req.params.id, "생활팁");
+  if (req.body.content && req.body.content.trim()) {
+    extras.comments.push({
+      id: extras.comments.length ? Math.max(...extras.comments.map((c) => c.id)) + 1 : 1,
       author: req.session.user.nickname,
       date: new Date().toISOString().slice(0, 10),
       content: req.body.content.trim(),
@@ -371,94 +461,161 @@ app.post("/tips/:id/comments", requireLogin, (req, res) => {
   res.redirect(`/tips/${req.params.id}`);
 });
 
-app.post("/tips/:id/edit", requireLogin, (req, res) => {
-  // TODO(API 연동): PATCH /api/tips/:id 로 교체
-  const tip = tips.find((t) => t.id === Number(req.params.id));
-  if (tip) {
-    tip.title = req.body.title || tip.title;
-    tip.category = req.body.category || tip.category;
-    tip.content = req.body.content || tip.content;
+app.post("/tips/:id/edit", requireLogin, async (req, res) => {
+  const { title, category, content } = req.body;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, bbsType: BBS_TYPE.tip, bbsTitle: title, bbsContext: content }),
+    });
+  } catch (err) {
+    // TODO: 수정 실패 사유를 화면에 노출하도록 개선
   }
+
+  if (category) getBbsExtras(req.params.id, "생활팁").category = category;
   res.redirect(`/tips/${req.params.id}`);
 });
 
-app.post("/tips/:id/delete", requireLogin, (req, res) => {
-  // TODO(API 연동): DELETE /api/tips/:id 로 교체
-  const idx = tips.findIndex((t) => t.id === Number(req.params.id));
-  if (idx !== -1) tips.splice(idx, 1);
+app.post("/tips/:id/delete", requireLogin, async (req, res) => {
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    // 별도 삭제 API가 없어 upBbs의 delYn="Y"로 소프트 삭제 처리
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, delYn: "Y" }),
+    });
+  } catch (err) {
+    // TODO: 삭제 실패 사유를 화면에 노출하도록 개선
+  }
+
+  delete bbsExtras[req.params.id];
   res.redirect("/tips");
 });
 
-// ---------- 스크린샷(사진) : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
-app.get("/photos", (req, res) => {
-  res.render("photos", { pageTitle: "길드원 스크린샷", photos });
+// ---------- 스크린샷(사진) (외부 게시글 API 연동, bbsType="S") : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
+app.get("/photos", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
+  const photos = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+  res.render("photos", { pageTitle: "길드원 스크린샷", photos, result: null });
 });
 
-app.get("/photos/:id", (req, res) => {
-  const photo = photos.find((p) => p.id === Number(req.params.id));
-  if (!photo) return res.redirect("/photos");
-  photo.views = (photo.views || 0) + 1;
+app.get("/photos/:id", async (req, res) => {
+  const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
+  const found = list.find((b) => String(b.bbsIdx) === req.params.id);
+  if (!found) return res.redirect("/photos");
+  const extras = getBbsExtras(found.bbsIdx, "생활");
+  extras.views += 1;
+  const photo = mapBbs(found, extras);
   const liked = !!(req.session.user && photo.likedBy.includes(req.session.user.nickname));
   res.render("photo_detail", { pageTitle: "길드원 스크린샷", photo, liked });
 });
 
-app.post("/photos", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/photos (multipart/form-data, multer 등 사용) 로 교체
+app.post("/photos", requireLogin, async (req, res) => {
   const { title, category, description, imageUrl } = req.body;
-  photos.unshift({
-    id: photos.length ? Math.max(...photos.map((p) => p.id)) + 1 : 1,
-    title,
-    author: req.session.user.nickname,
-    date: new Date().toISOString().slice(0, 10),
-    category: category || "생활",
-    content: description || "",
-    imageUrl: imageUrl || "https://picsum.photos/seed/default/600/600",
-    views: 0,
-    likedBy: [],
-    comments: [],
-  });
+  const image = imageUrl || "https://picsum.photos/seed/default/600/600";
+  let errorResult = null;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    const apiRes = await fetch(`${EXTERNAL_API_BASE}/v1Api/addBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsType: BBS_TYPE.photo, bbsTitle: title, bbsContext: description, bbsImage: image, fixYn: "N" }),
+    });
+    const data = await apiRes.json();
+    console.log(apiRes);
+    if (data.success) {
+      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
+      const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
+      const created = list.find((b) => b.bbsTitle === title && b.bbsImage === image);
+      if (created) {
+        getBbsExtras(created.bbsIdx, "생활").category = category || "생활";
+      }
+    } else {
+      errorResult = { success: false, message: "스크린샷 등록에 실패했습니다. 잠시 후 다시 시도해주세요." };
+    }
+  } catch (err) {
+    errorResult = { success: false, message: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  }
+
+  if (errorResult) {
+    const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
+    const photos = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+    return res.render("photos", { pageTitle: "길드원 스크린샷", photos, result: errorResult });
+  }
+
   res.redirect("/photos");
 });
 
-app.post("/photos/:id/edit", requireLogin, (req, res) => {
-  // TODO(API 연동): PATCH /api/photos/:id 로 교체 (이미지는 수정 대상에서 제외, 제목/항목/내용만 반영)
-  const photo = photos.find((p) => p.id === Number(req.params.id));
-  if (photo) {
-    photo.title = req.body.title || photo.title;
-    photo.category = req.body.category || photo.category;
-    photo.content = req.body.content || "";
+app.post("/photos/:id/edit", requireLogin, async (req, res) => {
+  // 이미지는 수정 대상에서 제외, 제목/항목/내용만 반영
+  const { title, category, content } = req.body;
+
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, bbsType: BBS_TYPE.photo, bbsTitle: title, bbsContext: content }),
+    });
+  } catch (err) {
+    // TODO: 수정 실패 사유를 화면에 노출하도록 개선
   }
+
+  if (category) getBbsExtras(req.params.id, "생활").category = category;
   res.redirect(`/photos/${req.params.id}`);
 });
 
-app.post("/photos/:id/delete", requireLogin, (req, res) => {
-  // TODO(API 연동): DELETE /api/photos/:id 로 교체
-  const idx = photos.findIndex((p) => p.id === Number(req.params.id));
-  if (idx !== -1) photos.splice(idx, 1);
+app.post("/photos/:id/delete", requireLogin, async (req, res) => {
+  try {
+    const cookie = req.session.user.externalSessionCookie;
+    if (!cookie) throw new Error("세션 정보가 없습니다.");
+
+    // 별도 삭제 API가 없어 upBbs의 delYn="Y"로 소프트 삭제 처리
+    await fetch(`${EXTERNAL_API_BASE}/v1Api/upBbs`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: toFormBody({ bbsIdx: req.params.id, delYn: "Y" }),
+    });
+  } catch (err) {
+    // TODO: 삭제 실패 사유를 화면에 노출하도록 개선
+  }
+
+  delete bbsExtras[req.params.id];
   res.redirect("/photos");
 });
 
 app.post("/photos/:id/like", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/photos/:id/like 로 교체
-  const photo = photos.find((p) => p.id === Number(req.params.id));
-  if (photo) {
-    const nickname = req.session.user.nickname;
-    const idx = photo.likedBy.indexOf(nickname);
-    if (idx === -1) {
-      photo.likedBy.push(nickname);
-    } else {
-      photo.likedBy.splice(idx, 1);
-    }
+  // 참고: bbs API에 좋아요 개념이 없어 로컬(메모리)에서만 관리합니다.
+  const extras = getBbsExtras(req.params.id, "생활");
+  const nickname = req.session.user.nickname;
+  const idx = extras.likedBy.indexOf(nickname);
+  if (idx === -1) {
+    extras.likedBy.push(nickname);
+  } else {
+    extras.likedBy.splice(idx, 1);
   }
   res.redirect(`/photos/${req.params.id}`);
 });
 
 app.post("/photos/:id/comments", requireLogin, (req, res) => {
-  // TODO(API 연동): POST /api/photos/:id/comments 로 교체
-  const photo = photos.find((p) => p.id === Number(req.params.id));
-  if (photo && req.body.content && req.body.content.trim()) {
-    photo.comments.push({
-      id: photo.comments.length ? Math.max(...photo.comments.map((c) => c.id)) + 1 : 1,
+  // 참고: bbs API에 댓글 개념이 없어 로컬(메모리)에서만 관리합니다.
+  const extras = getBbsExtras(req.params.id, "생활");
+  if (req.body.content && req.body.content.trim()) {
+    extras.comments.push({
+      id: extras.comments.length ? Math.max(...extras.comments.map((c) => c.id)) + 1 : 1,
       author: req.session.user.nickname,
       date: new Date().toISOString().slice(0, 10),
       content: req.body.content.trim(),
@@ -650,7 +807,7 @@ async function loginExternalApi() {
 
 // 사용자 목록 조회 (세션 불필요, 조회 확인됨)
 async function fetchExternalUserList() {
-  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getUserList`);
+  const res = await fetchWithTimeout(`${EXTERNAL_API_BASE}/v1Api/getUserList`);
   const data = await res.json().catch(() => ({}));
   return data.success && Array.isArray(data.userList) ? data.userList : [];
 }
@@ -680,16 +837,117 @@ function sortMembersByRole(list) {
 
 // 멤버 목록 조회 (세션 불필요)
 async function fetchExternalMemberList() {
-  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getMemberList`);
+  const res = await fetchWithTimeout(`${EXTERNAL_API_BASE}/v1Api/getMemberList`);
   const data = await res.json().catch(() => ({}));
   return data.success && Array.isArray(data.memberList) ? data.memberList : [];
 }
 
 // 멤버 단건 조회 (세션 불필요)
 async function fetchExternalMember(userIdx) {
-  const res = await fetch(`${EXTERNAL_API_BASE}/v1Api/getMember?userIdx=${encodeURIComponent(userIdx)}`);
+  const res = await fetchWithTimeout(`${EXTERNAL_API_BASE}/v1Api/getMember?userIdx=${encodeURIComponent(userIdx)}`);
   const data = await res.json().catch(() => ({}));
   return data.success ? data.memberInfo : null;
+}
+
+// ---------- 게시글(bbs) 공통 헬퍼 : 공지사항/팁&공략/스크린샷 3개 게시판이 bbsType으로 구분되어 공용 사용 ----------
+const BBS_TYPE = { notice: "N", tip: "T", photo: "S" };
+
+// bbs API에는 카테고리/조회수/댓글/좋아요 개념이 없어 bbsIdx 기준으로 로컬에만 보조 저장합니다.
+// (댓글은 원래부터 세 게시판 다 로컬 mock이라 이전과 동일한 수준입니다)
+const bbsExtras = {};
+function getBbsExtras(bbsIdx, defaultCategory) {
+  if (!bbsExtras[bbsIdx]) {
+    bbsExtras[bbsIdx] = { category: defaultCategory, views: 0, comments: [], likedBy: [] };
+  }
+  return bbsExtras[bbsIdx];
+}
+
+function mapBbs(b, extras) {
+  return {
+    id: b.bbsIdx,
+    title: b.bbsTitle || "",
+    content: b.bbsContext || "",
+    imageUrl: b.bbsImage || "",
+    author: b.regId || "익명",
+    date: (b.modDt || b.regDt || "").slice(0, 10),
+    pinned: b.fixYn === "Y",
+    category: extras.category,
+    views: extras.views,
+    comments: extras.comments,
+    likedBy: extras.likedBy,
+  };
+}
+
+// 게시글 목록 조회 (세션 불필요). delYn === "Y"인 항목은 제외
+async function fetchExternalBbsList(bbsType) {
+  const res = await fetchWithTimeout(`${EXTERNAL_API_BASE}/v1Api/getBbsList?bbsType=${encodeURIComponent(bbsType)}`);
+  const data = await res.json().catch(() => ({}));
+  const list = data.success && Array.isArray(data.bbsList) ? data.bbsList : [];
+  return list.filter((b) => b.delYn !== "Y");
+}
+
+// 고정(fixYn) 게시글을 맨 위로, 나머지는 최신순
+function sortBbsByPinned(list) {
+  return [...list].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return (b.date || "").localeCompare(a.date || "");
+  });
+}
+
+// ---------- 출석체크 이력 조회 (세션 불필요) ----------
+// 응답 메시지가 "이번달 출석체크 이력 조회를 성공했습니다"인 것으로 보아 매번 이번 달 데이터만 내려주는 것으로 보임
+async function fetchAttendHist(params = {}) {
+  const qs = new URLSearchParams();
+  if (params.userId) qs.set("userId", params.userId);
+  if (params.userNm) qs.set("userNm", params.userNm);
+  const query = qs.toString();
+  const res = await fetchWithTimeout(`${EXTERNAL_API_BASE}/v1Api/getAttendCheckHist${query ? "?" + query : ""}`);
+  const data = await res.json().catch(() => ({}));
+  return data.success && Array.isArray(data.AttHist) ? data.AttHist : [];
+}
+
+// 이번 달 연속 출석일수 계산 : 오늘(출석 안했으면 어제)부터 거슬러 올라가며 빈 날이 나올 때까지 카운트
+function computeStreak(checkedDaySet, todayDay) {
+  let streak = 0;
+  let day = checkedDaySet.has(todayDay) ? todayDay : todayDay - 1;
+  while (checkedDaySet.has(day)) {
+    streak += 1;
+    day -= 1;
+  }
+  return streak;
+}
+
+// 전체 출석 이력(이번 달) -> 화면에서 쓰는 attendance 형태로 변환 (본인 도장판 + 전체 랭킹)
+function buildAttendanceView(allHist, currentUser) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayDay = new Date().getDate();
+
+  const myHist = currentUser ? allHist.filter((h) => h.userId === currentUser.username) : [];
+  const checkedDaySet = new Set(myHist.map((h) => Number((h.attendDt || "").slice(8, 10))));
+  const checkedDays = [...checkedDaySet].sort((a, b) => a - b);
+  const todayChecked = myHist.some((h) => (h.attendDt || "").slice(0, 10) === todayStr);
+
+  // 같은 날 중복 체크인이 있을 수 있어(백엔드에 하루 1회 제한이 없는 것으로 보임) 날짜 기준으로 중복 제거 후 집계
+  const datesByUser = {};
+  allHist.forEach((h) => {
+    const name = h.userNm || h.userId || "익명";
+    const dateStr = (h.attendDt || "").slice(0, 10);
+    if (!datesByUser[name]) datesByUser[name] = new Set();
+    datesByUser[name].add(dateStr);
+  });
+  const ranking = Object.entries(datesByUser)
+    .map(([nickname, dates]) => [nickname, dates.size])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([nickname, count], i) => ({ rank: i + 1, nickname, count }));
+
+  return {
+    checkedDays,
+    todayChecked,
+    monthlyCount: checkedDays.length,
+    streak: computeStreak(checkedDaySet, todayDay),
+    ranking,
+  };
 }
 
 app.get("/admin/users/new", requireAdmin, async (req, res) => {

@@ -12,6 +12,12 @@
       <% } %>
     </div>
 
+    <% if (result) { %>
+      <div class="form-result <%= result.success ? 'is-success' : 'is-error' %>">
+        <%= result.message %>
+      </div>
+    <% } %>
+
     <%
       const catColor = {
         "직업공략": "#8fc7e8",

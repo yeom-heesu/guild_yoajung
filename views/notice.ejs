@@ -13,6 +13,12 @@
       <% } %>
     </div>
 
+    <% if (result) { %>
+      <div class="form-result <%= result.success ? 'is-success' : 'is-error' %>">
+        <%= result.message %>
+      </div>
+    <% } %>
+
     <%
       const noticeCatColor = {
         "공지": "#f7c9d8",
