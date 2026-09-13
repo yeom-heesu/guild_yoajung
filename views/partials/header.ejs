@@ -30,8 +30,7 @@
         <div class="topbar-right">
           <div class="topbar-auth">
             <% if (!currentUser) { %>
-              <!-- TODO(기획 외 추가): 가입 문의 - 실제로는 디스코드 초대 링크나 신청 폼으로 교체 -->
-              <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+              <a href="https://open.kakao.com/o/sWdiJvFi" target="_blank" rel="noopener" class="btn-join-inquiry">가입 문의</a>
             <% } %>
             <% if (currentUser) { %>
               <span class="topbar-user-name">
@@ -86,7 +85,7 @@
         <% if (!currentUser) { %>
           <div class="mobile-menu-auth">
             <a href="/login" class="btn-ghost-sm">로그인</a>
-            <a href="mailto:guild.yoajeong@example.com" class="btn-join-inquiry">가입 문의</a>
+            <a href="https://open.kakao.com/o/sWdiJvFi" target="_blank" rel="noopener" class="btn-join-inquiry">가입 문의</a>
           </div>
         <% } else if (isAdmin) { %>
           <div class="mobile-menu-auth">

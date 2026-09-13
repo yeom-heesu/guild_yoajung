@@ -688,11 +688,13 @@ app.get("/members", async (req, res) => {
   res.render("members", { pageTitle: "멤버소개", members: sortMembersByRole(list.map(mapMember)) });
 });
 
-const EMPTY_MEMBER_FORM = { nickname: "", role: "", job: "", level: "", intro: "" };
+const EMPTY_MEMBER_FORM = { userIdx: "", nickname: "", role: "", job: "", level: "", intro: "" };
 
 // 주의: '/members/:id'보다 먼저 등록해야 'new'가 id로 잘못 해석되지 않음
 app.get("/members/new", requireLogin, (req, res) => {
-  res.render("member_new", { pageTitle: "멤버 등록", result: null, form: EMPTY_MEMBER_FORM });
+  // 기본값은 본인 계정이지만, 다른 사용자 몫으로 등록할 수도 있어 직접 수정 가능하게 둠
+  const form = { ...EMPTY_MEMBER_FORM, userIdx: req.session.user.id };
+  res.render("member_new", { pageTitle: "멤버 등록", result: null, form });
 });
 
 app.get("/members/:id", async (req, res) => {
@@ -702,8 +704,8 @@ app.get("/members/:id", async (req, res) => {
 });
 
 app.post("/members", requireLogin, async (req, res) => {
-  const { nickname, avatar, role, job, level, intro } = req.body;
-  const form = { nickname, role, job, level, intro };
+  const { userIdx, nickname, avatar, role, job, level, intro } = req.body;
+  const form = { userIdx, nickname, role, job, level, intro };
 
   try {
     const login = await loginExternalApi();
@@ -714,7 +716,7 @@ app.post("/members", requireLogin, async (req, res) => {
       method: "POST",
       headers: { Cookie: login.sessionCookie },
       body: toFormBody({
-        userIdx: req.session.user.id,
+        userIdx,
         userNickName: nickname,
         userGameRoll: job,
         userGameLevel: level,
@@ -740,7 +742,7 @@ app.post("/members", requireLogin, async (req, res) => {
     });
   }
 
-  res.redirect(`/members/${req.session.user.id}`);
+  res.redirect(`/members/${userIdx}`);
 });
 
 app.post("/members/:id/edit", requireLogin, async (req, res) => {
