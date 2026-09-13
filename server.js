@@ -217,9 +217,9 @@ app.get("/", async (req, res) => {
     fetchAttendHist().catch(() => []),
   ]);
   const members = sortMembersByRole(memberList.map(mapMember));
-  const notices = sortBbsByPinned(noticeList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
-  const tips = tipList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
-  const photos = photoList.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+  const notices = sortBbsByPinned(noticeList).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지")));
+  const tips = sortByDateDesc(tipList).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+  const photos = sortByDateDesc(photoList).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
   const attendance = buildAttendanceView(attendHist, req.session.user);
 
   res.render("index", {
@@ -288,7 +288,7 @@ app.post("/attendance/check", requireLogin, async (req, res) => {
 // ---------- 공지사항 (외부 게시글 API 연동, bbsType="N") ----------
 app.get("/notice", async (req, res) => {
   const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
-  const notices = sortBbsByPinned(list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
+  const notices = sortBbsByPinned(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지")));
   res.render("notice", { pageTitle: "공지사항", notices, result: null });
 });
 
@@ -317,9 +317,8 @@ app.post("/notice", requireAdmin, async (req, res) => {
     const data = await apiRes.json();
 
     if (data.success) {
-      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
       const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
-      const created = list.find((b) => b.bbsTitle === title && b.bbsContext === content);
+      const created = findJustCreated(list);
       if (created) {
         getBbsExtras(created.bbsIdx, "공지").category = category || "공지";
       }
@@ -332,7 +331,7 @@ app.post("/notice", requireAdmin, async (req, res) => {
 
   if (errorResult) {
     const list = await fetchExternalBbsList(BBS_TYPE.notice).catch(() => []);
-    const notices = sortBbsByPinned(list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지"))));
+    const notices = sortBbsByPinned(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "공지")));
     return res.render("notice", { pageTitle: "공지사항", notices, result: errorResult });
   }
 
@@ -395,7 +394,7 @@ app.post("/notice/:id/comments", requireLogin, (req, res) => {
 // ---------- 팁 & 공략 (외부 게시글 API 연동, bbsType="T") : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
 app.get("/tips", async (req, res) => {
   const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
-  const tips = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+  const tips = sortByDateDesc(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
   res.render("tips", { pageTitle: "팁 & 공략", tips, result: null });
 });
 
@@ -425,9 +424,8 @@ app.post("/tips", requireAdmin, async (req, res) => {
     const data = await apiRes.json();
 
     if (data.success) {
-      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
       const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
-      const created = list.find((b) => b.bbsTitle === title && b.bbsContext === content);
+      const created = findJustCreated(list);
       if (created) {
         getBbsExtras(created.bbsIdx, "생활팁").category = category || "생활팁";
       }
@@ -440,7 +438,7 @@ app.post("/tips", requireAdmin, async (req, res) => {
 
   if (errorResult) {
     const list = await fetchExternalBbsList(BBS_TYPE.tip).catch(() => []);
-    const tips = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
+    const tips = sortByDateDesc(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활팁")));
     return res.render("tips", { pageTitle: "팁 & 공략", tips, result: errorResult });
   }
 
@@ -503,7 +501,7 @@ app.post("/tips/:id/delete", requireLogin, async (req, res) => {
 // ---------- 스크린샷(사진) (외부 게시글 API 연동, bbsType="S") : 조회는 비회원도 가능, 등록/수정/삭제는 로그인 필요 ----------
 app.get("/photos", async (req, res) => {
   const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
-  const photos = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+  const photos = sortByDateDesc(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
   res.render("photos", { pageTitle: "길드원 스크린샷", photos, result: null });
 });
 
@@ -533,11 +531,10 @@ app.post("/photos", requireLogin, async (req, res) => {
       body: toFormBody({ bbsType: BBS_TYPE.photo, bbsTitle: title, bbsContext: description, bbsImage: image, fixYn: "N" }),
     });
     const data = await apiRes.json();
-    console.log(apiRes);
+   
     if (data.success) {
-      // addBbs가 생성된 글의 bbsIdx를 응답에 주지 않아, 방금 만든 글을 목록에서 다시 찾아 카테고리를 로컬에 붙여둠
       const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
-      const created = list.find((b) => b.bbsTitle === title && b.bbsImage === image);
+      const created = findJustCreated(list);
       if (created) {
         getBbsExtras(created.bbsIdx, "생활").category = category || "생활";
       }
@@ -550,7 +547,7 @@ app.post("/photos", requireLogin, async (req, res) => {
 
   if (errorResult) {
     const list = await fetchExternalBbsList(BBS_TYPE.photo).catch(() => []);
-    const photos = list.map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
+    const photos = sortByDateDesc(list).map((b) => mapBbs(b, getBbsExtras(b.bbsIdx, "생활")));
     return res.render("photos", { pageTitle: "길드원 스크린샷", photos, result: errorResult });
   }
 
@@ -748,7 +745,6 @@ app.post("/members", requireLogin, async (req, res) => {
 
 app.post("/members/:id/edit", requireLogin, async (req, res) => {
   const { nickname, avatar, role, job, level, intro } = req.body;
-  console.log(req)
   const payload = { userIdx: req.params.id };
   // "선택 값은 입력된 필드만 반영" 정책에 맞춰, 실제로 입력된 필드만 함께 보냄
   if (nickname) payload.userNickName = nickname;
@@ -868,7 +864,7 @@ function mapBbs(b, extras) {
     title: b.bbsTitle || "",
     content: b.bbsContext || "",
     imageUrl: b.bbsImage || "",
-    author: b.regId || "익명",
+    author: b.regNm || "익명",
     date: (b.modDt || b.regDt || "").slice(0, 10),
     pinned: b.fixYn === "Y",
     category: extras.category,
@@ -887,11 +883,31 @@ async function fetchExternalBbsList(bbsType) {
 }
 
 // 고정(fixYn) 게시글을 맨 위로, 나머지는 최신순
-function sortBbsByPinned(list) {
-  return [...list].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return (b.date || "").localeCompare(a.date || "");
+// 참고: mapBbs()가 date를 "YYYY-MM-DD"로 자르기 때문에 같은 날 등록된 글끼리는 구분이 안 됨
+// -> 시:분:초까지 있는 원본 modDt/regDt 기준으로, mapBbs() 적용 "전" 원본 목록을 정렬해야 함
+function bbsSortKey(b) {
+  return b.modDt || b.regDt || "";
+}
+
+// addBbs가 생성된 글의 bbsIdx를 응답에 안 주기 때문에, 등록 직후 목록을 다시 조회해서
+// "방금 만든 글"을 찾아야 함. 제목/내용으로 매칭하면 예전에 같은 텍스트로 만든 글과 헷갈릴 수 있어
+// bbsIdx(auto-increment)가 가장 큰, 즉 가장 최근에 생성된 항목을 그 글로 간주합니다.
+function findJustCreated(list) {
+  return list.reduce((latest, b) => (!latest || Number(b.bbsIdx) > Number(latest.bbsIdx) ? b : latest), null);
+}
+
+function sortBbsByPinned(rawList) {
+  return [...rawList].sort((a, b) => {
+    const aPinned = a.fixYn === "Y";
+    const bPinned = b.fixYn === "Y";
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+    return bbsSortKey(b).localeCompare(bbsSortKey(a));
   });
+}
+
+// 최신순 정렬 (팁&공략/스크린샷처럼 고정 개념이 없는 게시판용)
+function sortByDateDesc(rawList) {
+  return [...rawList].sort((a, b) => bbsSortKey(b).localeCompare(bbsSortKey(a)));
 }
 
 // ---------- 출석체크 이력 조회 (세션 불필요) ----------

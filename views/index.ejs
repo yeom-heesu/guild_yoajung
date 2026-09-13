@@ -34,7 +34,7 @@
           <% if (attendance.todayChecked) { %>
             <div class="welcome-actions">
               <span class="attendance-complete-btn">✔ 출석완료!</span>
-              <button type="button" class="attendance-status-btn" data-open-attendance-modal>☎ 출석현황보기</button>
+              <button type="button" class="attendance-status-btn" data-open-attendance-modal>출석현황보기</button>
             </div>
           <% } else { %>
             <button type="button" class="btn-primary" data-open-attendance-modal>
@@ -204,7 +204,7 @@
       <div class="notice-preview-panel">
         <span class="notice-preview-icon"></span>
         <div class="notice-preview-list">
-          <% notices.filter(n => n.pinned).slice(0, 2).forEach(n => { %>
+          <% notices.slice(0, 2).forEach(n => { %>
             <a href="/notice/<%= n.id %>" class="notice-preview-card">
               <span class="notice-preview-label">NOTICE</span>
               <h4><%= n.title %></h4>
